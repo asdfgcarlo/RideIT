@@ -17,6 +17,10 @@
     "plugins": [
       "expo-status-bar",
       [
+        "expo-notifications",
+        { "enableRemoteNotifications": false }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "Allow RideIT to show your live location on the commuter map."

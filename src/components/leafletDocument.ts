@@ -1,7 +1,9 @@
 import { carouselRoutes } from '../data/carouselRoutes';
 
 export type MapPosition = { latitude: number; longitude: number; accuracy: number | null };
-export type LeafletMapProps = { position: MapPosition | null; recenter: number };
+export type RouteDirection = 'northbound' | 'southbound';
+export type TripDestination = { name: string; lat: number; lng: number };
+export type LeafletMapProps = { position: MapPosition | null; recenter: number; direction: RouteDirection; overview: number; destination: TripDestination | null };
 
 // Kept stable so GPS updates move the marker without reloading the map.
 export const leafletDocument = `<!DOCTYPE html>
@@ -11,7 +13,7 @@ export const leafletDocument = `<!DOCTYPE html>
 <style>html,body,#map{height:100%;margin:0}body{background:#e8e5ed;font-family:Arial}
 #notice{position:absolute;top:12px;left:50px;right:12px;z-index:1000;background:white;padding:10px;border-radius:8px;font-size:13px}
 .leaflet-control-attribution{font-size:10px}</style></head>
-<body><div id="map" role="region" aria-label="Live location map"></div><div id="notice">Loading map…</div>
+<body><div id="map" role="region" aria-label="Live location map"></div><div id="notice">Loading map...</div>
 <script>
 function report(type){
  if(window.ReactNativeWebView) window.ReactNativeWebView.postMessage(type);
@@ -35,32 +37,14 @@ if(window.L){
  const routes=${JSON.stringify(carouselRoutes)};
  const routeLayer=L.layerGroup().addTo(map);
  let activeDirection='northbound';
- const directionControl=L.control({position:'bottomleft'});
- directionControl.onAdd=function(){
-  const panel=L.DomUtil.create('div');
-  panel.style.cssText='background:white;padding:8px;border-radius:8px;box-shadow:0 1px 5px #777;font-size:12px;max-width:240px';
-  const select=document.createElement('select');
-  select.setAttribute('aria-label','Route direction');
-  select.style.cssText='min-height:44px;width:100%;font-size:13px;background:white;color:#241b38';
-  [['northbound','Northbound: PITX to Monumento'],['southbound','Southbound: Monumento to PITX']].forEach(function(item){
-   const option=document.createElement('option');option.value=item[0];option.textContent=item[1];select.appendChild(option);
-  });
-  select.onchange=function(){showRoute(select.value);};
-  panel.appendChild(select);
-  const hint=document.createElement('div');hint.textContent='24 stations · Tap a marker for its name';panel.appendChild(hint);
-  const overview=document.createElement('button');overview.textContent='Show full route';
-  overview.style.cssText='min-height:44px;width:100%;margin-top:4px';
-  overview.onclick=function(){showRoute(activeDirection);};panel.appendChild(overview);
-  L.DomEvent.disableClickPropagation(panel);L.DomEvent.disableScrollPropagation(panel);
-  return panel;
- };
- directionControl.addTo(map);
+ let lastOverview=0;
+ let destinationMarker=null,lastDestination='';
  function showRoute(direction){
   activeDirection=direction;
   follow=false;
   routeLayer.clearLayers();
   const route=routes[direction];
-  const color=direction==='northbound'?'#7c3aed':'#dc2626';
+  const color=direction==='northbound'?'#0c09ce':'#a50909';
   const line=L.polyline(route.path,{color:color,weight:5,opacity:0.85}).addTo(routeLayer);
   route.stations.forEach(function(station,index){
    const label=document.createElement('div');
@@ -68,22 +52,42 @@ if(window.L){
    L.circleMarker([station.lat,station.lng],{radius:7,color:color,weight:3,fillColor:'#fff',fillOpacity:1})
     .addTo(routeLayer).bindPopup(label).bindTooltip(station.name);
   });
-  map.fitBounds(line.getBounds(),{paddingTopLeft:[20,20],paddingBottomRight:[20,130],animate:false});
+  map.fitBounds(line.getBounds(),{paddingTopLeft:[20,20],paddingBottomRight:[20,20],animate:false});
  }
  showRoute(activeDirection);
  map.on('dragstart',function(){follow=false;});
  window.updateRideITLocation=function(data){
+  const directionChanged=!!routes[data.direction] && data.direction!==activeDirection;
+  const overviewChanged=Number.isFinite(data.overview) && data.overview!==lastOverview;
+  if(overviewChanged)lastOverview=data.overview;
+  if(directionChanged||overviewChanged)showRoute(routes[data.direction]?data.direction:activeDirection);
+  const destination=data.destination;
+  const destinationKey=JSON.stringify(destination||null);
+  const destinationChanged=destinationKey!==lastDestination;
+  if(destinationChanged){
+   lastDestination=destinationKey;
+   if(destinationMarker)map.removeLayer(destinationMarker);
+   destinationMarker=null;
+   if(destination && Number.isFinite(destination.lat) && Number.isFinite(destination.lng)){
+    const label=document.createElement('div');label.textContent='Trip endpoint: '+destination.name;
+    const tooltip=document.createElement('span');tooltip.textContent='END: '+destination.name;
+    destinationMarker=L.circleMarker([destination.lat,destination.lng],{radius:12,color:'#241b38',weight:3,fillColor:'#facc15',fillOpacity:1})
+     .addTo(map).bindPopup(label).bindTooltip(tooltip,{permanent:true,direction:'top',offset:[0,-12]});
+    if(!overviewChanged){follow=false;map.setView([destination.lat,destination.lng],15,{animate:false});}
+   }
+  }
   const p=data.position;
-  if(!p){if(marker)map.removeLayer(marker);if(circle)map.removeLayer(circle);marker=null;circle=null;follow=true;return;}
+  if(!p){if(marker)map.removeLayer(marker);if(circle)map.removeLayer(circle);marker=null;circle=null;return;}
   if(!Number.isFinite(p.latitude)||!Number.isFinite(p.longitude))return;
   const latlng=[p.latitude,p.longitude];
   const first=!marker;
   if(first){
    circle=L.circle(latlng,{radius:Math.max(0,p.accuracy||0),color:'#2563eb',weight:1,fillOpacity:0.12}).addTo(map);
-   marker=L.circleMarker(latlng,{radius:9,color:'#fff',weight:3,fillColor:'#2563eb',fillOpacity:1}).addTo(map).bindPopup('You are here');
+   marker=L.circleMarker(latlng,{radius:5,color:'#000000',weight:3,fillColor:'#000000',fillOpacity:1}).addTo(map).bindPopup('You are here');
   }else{marker.setLatLng(latlng);circle.setLatLng(latlng).setRadius(Math.max(0,p.accuracy||0));}
-  if(data.recenter!==lastRecenter){follow=true;lastRecenter=data.recenter;}
-  if(first||follow)map.setView(latlng,first?16:map.getZoom(),{animate:false});
+  if(first&&!destination&&!overviewChanged&&!directionChanged)follow=true;
+  if(data.recenter!==lastRecenter){if(lastRecenter!==-1 || !destination)follow=true;lastRecenter=data.recenter;}
+  if(!directionChanged&&!overviewChanged&&!destinationChanged&&follow)map.setView(latlng,first?16:map.getZoom(),{animate:false});
  };
  window.addEventListener('message',function(event){
   if(event.source!==window.parent)return;
@@ -92,3 +96,4 @@ if(window.L){
  report('ready');
 }
 </script></body></html>`;
+

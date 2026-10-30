@@ -5,7 +5,7 @@ import { leafletDocument, type LeafletMapProps } from './leafletDocument';
 
 const source = { html: leafletDocument, baseUrl: 'https://rideit.local/' };
 
-export default function LeafletMap({ position, recenter }: LeafletMapProps) {
+export default function LeafletMap({ position, recenter, direction, overview, destination }: LeafletMapProps) {
   const webView = useRef<WebView<object>>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -13,9 +13,9 @@ export default function LeafletMap({ position, recenter }: LeafletMapProps) {
 
   useEffect(() => {
     if (ready) webView.current?.injectJavaScript(
-      `window.updateRideITLocation(${JSON.stringify({ position, recenter })}); true;`,
+      `window.updateRideITLocation(${JSON.stringify({ position, recenter, direction, overview, destination })}); true;`,
     );
-  }, [position, recenter, ready]);
+  }, [position, recenter, direction, overview, destination, ready]);
 
   useEffect(() => {
     if (ready) return;
@@ -41,7 +41,7 @@ export default function LeafletMap({ position, recenter }: LeafletMapProps) {
         onContentProcessDidTerminate={() => { setReady(false); setFailed(true); }}
         onShouldStartLoadWithRequest={({ url }) => url === 'about:blank' || url === source.baseUrl}
       />
-      {!ready && !failed && <View style={styles.overlay}><ActivityIndicator color="#160F2D" /><Text>Loading map…</Text></View>}
+      {!ready && !failed && <View style={styles.overlay}><ActivityIndicator color="#160F2D" /><Text>Loading map...</Text></View>}
       {failed && <View style={styles.overlay}>
         <Text>Map unavailable. Check your internet connection.</Text>
         <TouchableOpacity accessibilityRole="button" onPress={() => { setReady(false); setFailed(false); setGeneration(value => value + 1); }}>
@@ -57,3 +57,4 @@ const styles = StyleSheet.create({
   overlay: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, alignItems: 'center', justifyContent: 'center', padding: 20, gap: 12, backgroundColor: '#e8e5ed' },
   retry: { color: '#2563eb', padding: 12, fontWeight: '700' },
 });
+

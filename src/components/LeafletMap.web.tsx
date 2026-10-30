@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { leafletDocument, type LeafletMapProps } from './leafletDocument';
 
-export default function LeafletMap({ position, recenter }: LeafletMapProps) {
+export default function LeafletMap({ position, recenter, direction, overview, destination }: LeafletMapProps) {
   const frame = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -16,8 +16,8 @@ export default function LeafletMap({ position, recenter }: LeafletMapProps) {
     return () => window.removeEventListener('message', onMessage);
   }, []);
   useEffect(() => {
-    if (ready) frame.current?.contentWindow?.postMessage({ rideitLocation: { position, recenter } }, '*');
-  }, [ready, position, recenter]);
+    if (ready) frame.current?.contentWindow?.postMessage({ rideitLocation: { position, recenter, direction, overview, destination } }, '*');
+  }, [ready, position, recenter, direction, overview, destination]);
   useEffect(() => {
     if (ready) return;
     const timer = setTimeout(() => setFailed(true), 20000);
@@ -32,3 +32,4 @@ export default function LeafletMap({ position, recenter }: LeafletMapProps) {
     }}>Reload map</button>}
   </div>;
 }
+

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -36,6 +36,11 @@ export default function CommuterDashboardScreen({
   const [pickerVisible, setPickerVisible] = useState(false);
   const [stations, setStations] = useState<Station[]>([]);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+  const [tripId, setTripId] = useState(0);
+  const [arrivalMessages, setArrivalMessages] = useState<string[]>([]);
+  const handleArrival = useCallback((station: string) => {
+    setArrivalMessages(messages => [`You are arriving at ${station}.`, ...messages].slice(0, 20));
+  }, []);
   const [loadingStations, setLoadingStations] = useState(false);
   const [stationError, setStationError] = useState('');
   const [retryCount, setRetryCount] = useState(0);
@@ -146,9 +151,9 @@ export default function CommuterDashboardScreen({
             
 
             <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>{selectedStation?.station_name || 'Choose Your Station'}</Text>
+              <Text style={styles.cardTitle}>{selectedStation?.station_name || 'Choose Your Destination'}</Text>
               <Text style={styles.cardDescription}>
-                {selectedStation ? 'Tap to change your boarding station.' : 'Select your EDSA Carousel boarding point.'}
+                {selectedStation ? 'Tap to change your destination station.' : 'Select your EDSA Carousel destination.'}
               </Text>
             </View>
 
@@ -163,7 +168,7 @@ export default function CommuterDashboardScreen({
               style={[styles.featureCard, styles.featureCardLeft]}
             >
               <Text style={styles.featureTitle}>Live Map</Text>
-              <LiveLocationMap />
+              <LiveLocationMap destinationName={selectedStation?.station_name} tripId={tripId} onArrival={handleArrival} />
             </View>
 
             <TouchableOpacity
@@ -171,14 +176,14 @@ export default function CommuterDashboardScreen({
               onPress={() =>
                 Alert.alert(
                   'Notifications',
-                  'Bus arrival notifications will be available after notification integration.',
+                  arrivalMessages.length ? arrivalMessages.join('\n\n') : 'No arrival alerts yet. Select a destination and enable location to receive an alert within 200 metres.',
                 )
               }
             >
               
               <Text style={styles.featureTitle}>Notifications</Text>
               <Text style={styles.featureSmall}>
-                Stay updated
+                {arrivalMessages[0] || 'Your station arrival alerts appear here.'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -250,6 +255,7 @@ export default function CommuterDashboardScreen({
                     style={[styles.stationRow, selectedStation?.id === item.id && styles.selectedStationRow]}
                     onPress={() => {
                       setSelectedStation(item);
+                      setTripId(value => value + 1);
                       setPickerVisible(false);
                     }}
                   >

@@ -2,3 +2,4 @@ Flask
 Flask-MySQLdb
 Flask-Cors
 python-dotenv
+gunicorn

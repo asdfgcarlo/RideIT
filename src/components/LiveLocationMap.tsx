@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, AppState, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, AppState, Linking, Platform, StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import LeafletMap from './LeafletMap';
-import type { MapPosition, RouteDirection } from './leafletDocument';
+import type { MapPosition, RouteDirection, TripDestination } from './leafletDocument';
 import { carouselRoutes } from '../data/carouselRoutes';
 import { distanceInMetres } from '../utils/arrivalDistance';
 import { enableArrivalNotifications, showArrivalNotification } from '../services/arrivalNotifications';
@@ -17,7 +17,7 @@ export default function LiveLocationMap({ destinationName = null, tripId = 0, on
 }) {
   const focused = useIsFocused();
   const mounted = useRef(true);
-  const arrival = useRef({ key: '', notified: false });
+  const notifiedTrips = useRef(new Set<string>());
   const fixTime = useRef(0);
   const [appActive, setAppActive] = useState(AppState.currentState === 'active');
   const [enabled, setEnabled] = useState(false);
@@ -29,9 +29,13 @@ export default function LiveLocationMap({ destinationName = null, tripId = 0, on
   const [overview, setOverview] = useState(0);
   const [direction, setDirection] = useState<RouteDirection>('northbound');
   const [directionOpen, setDirectionOpen] = useState(false);
-  const destination = destinationName
+  const tripKey = `${tripId}:${direction}:${destinationName || ''}`;
+  const [testEndpoint, setTestEndpoint] = useState<{ tripKey: string; id: number; destination: TripDestination } | null>(null);
+  const activeTest = testEndpoint?.tripKey === tripKey ? testEndpoint : null;
+  const stationDestination = destinationName
     ? carouselRoutes[direction].stations.find(station => stationKey(station.name) === stationKey(destinationName)) ?? null
     : null;
+  const destination = activeTest?.destination ?? stationDestination;
 
   useEffect(() => {
     mounted.current = true;
@@ -40,21 +44,51 @@ export default function LiveLocationMap({ destinationName = null, tripId = 0, on
   }, []);
 
   useEffect(() => {
-    const key = `${tripId}:${direction}:${destinationName || ''}`;
-    if (arrival.current.key !== key) arrival.current = { key, notified: false };
-    if (!enabled || !focused || !appActive || !destination || !position || arrival.current.notified) return;
+    const key = activeTest ? `test:${activeTest.id}` : tripKey;
+    if (!enabled || !focused || !appActive || !destination || !position || notifiedTrips.current.has(key)) return;
     // Ignore stale or imprecise fixes so GPS drift does not trigger an arrival.
     if (Date.now() - fixTime.current > 15000 || position.accuracy == null || position.accuracy > 100) return;
     const distance = distanceInMetres(position.latitude, position.longitude, destination.lat, destination.lng);
     if (!Number.isFinite(distance) || distance > 200) return;
-    arrival.current.notified = true;
+    notifiedTrips.current.add(key);
+    if (Platform.OS !== 'web') {
+      Vibration.vibrate(Platform.OS === 'ios' ? [0, 200, 200] : [0, 150, 200, 150, 200, 150], false);
+    }
     onArrival?.(destination.name);
     void showArrivalNotification(destination.name).catch(() => false).then(shown => {
       if (!shown && mounted.current && AppState.currentState === 'active') {
-        Alert.alert(`Arriving at ${destination.name}`, `You are arriving at ${destination.name}. Prepare to get off at your destination.`);
+        Alert.alert(`Arriving at ${destination.name}`, `You are arriving at ${destination.name}. \nPrepare to get off at your destination.`);
       }
     });
-  }, [position, destination, destinationName, tripId, direction, enabled, focused, appActive, onArrival]);
+  }, [position, destination, tripKey, activeTest, enabled, focused, appActive, onArrival]);
+
+  const testNearbyArrival = async () => {
+    setRequesting(true);
+    try {
+      await enableArrivalNotifications().catch(() => false);
+      const fix = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      if (!mounted.current) return;
+      if (fix.coords.accuracy == null || fix.coords.accuracy > 100 || Math.abs(fix.coords.latitude) > 89) {
+        Alert.alert('GPS not ready', 'Wait for a more accurate location outdoors, then try again.');
+        return;
+      }
+      fixTime.current = fix.timestamp;
+      setPosition(fix.coords);
+      setTestEndpoint({
+        tripKey,
+        id: Date.now(),
+        destination: {
+          name: 'Test endpoint (100 m away)',
+          lat: fix.coords.latitude + (100 / 6371000) * (180 / Math.PI),
+          lng: fix.coords.longitude,
+        },
+      });
+    } catch {
+      Alert.alert('Location unavailable', 'Enable location and try again.');
+    } finally {
+      if (mounted.current) setRequesting(false);
+    }
+  };
 
   const enableLocation = async () => {
     setRequesting(true);
@@ -127,32 +161,41 @@ export default function LiveLocationMap({ destinationName = null, tripId = 0, on
   return <View style={styles.card}>
     <View style={styles.map}><LeafletMap position={enabled && focused && appActive ? position : null} recenter={recenter} direction={direction} overview={overview} destination={destination} /></View>
     <View style={styles.controls}>
-      {destinationName && <Text style={styles.message}>{destination ? `Trip endpoint: ${destination.name} (yellow marker)` : `Coordinates unavailable for ${destinationName}.`}</Text>}
+      {(destinationName || activeTest) && <Text style={styles.message}>{destination ? `Trip endpoint: ${destination.name} (yellow marker)` : `Coordinates unavailable for ${destinationName}.`}</Text>}
       {destination && <Text style={styles.hint}>Arrival alert within 200 m while this dashboard is open. Enable location to start.</Text>}
       <Text accessibilityLiveRegion="polite" style={styles.message}>{enabled && !appActive ? 'Location paused while the app is in the background.' : message}</Text>
       <View style={styles.buttons}>
         <TouchableOpacity accessibilityRole="button" disabled={requesting} style={styles.button} onPress={() => {
           if (enabled) { setEnabled(false); setPosition(null); setMessage('Location tracking stopped.'); }
           else void enableLocation();
-        }}><Text style={styles.buttonText}>{requesting ? 'Requesting…' : enabled ? 'Stop location' : 'Enable my location'}</Text></TouchableOpacity>
+        }}><Text style={styles.buttonText}>{requesting ? 'Requesting…' : enabled ? 'Stop location' : 'Enable My Location'}</Text></TouchableOpacity>
         {settingsNeeded && Platform.OS !== 'web' && <TouchableOpacity accessibilityRole="button" style={styles.button} onPress={() => { void Linking.openSettings().catch(() => setMessage('Open your device settings to allow location access.')); }}><Text style={styles.buttonText}>Open settings</Text></TouchableOpacity>}
       </View>
       <View style={styles.buttons}>
-        <TouchableOpacity accessibilityRole="button" disabled={!enabled || !position} style={[styles.button, (!enabled || !position) && styles.disabledButton]} onPress={() => setRecenter(value => value + 1)}><Text style={styles.buttonText}>Recenter</Text></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" disabled={!enabled || !position} style={[styles.button, (!enabled || !position) && styles.disabledButton]} onPress={() => setRecenter(value => value + 1)}><Text style={styles.buttonText}>Re-center</Text></TouchableOpacity>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel="Route direction" accessibilityState={{ expanded: directionOpen }} style={styles.button} onPress={() => setDirectionOpen(value => !value)}>
           <Text style={styles.buttonText}>{direction === 'northbound' ? 'Northbound' : 'Southbound'} {directionOpen ? '▴' : '▾'}</Text>
         </TouchableOpacity>
         <TouchableOpacity accessibilityRole="button" style={styles.button} onPress={() => setOverview(value => value + 1)}>
-          <Text style={styles.buttonText}>Show full route</Text>
+          <Text style={styles.buttonText}>Show Full Route</Text>
         </TouchableOpacity>
       </View>
+      <View style={styles.buttons}>
+        <TouchableOpacity accessibilityRole="button" disabled={!enabled || !position || requesting} style={[styles.button, (!enabled || !position || requesting) && styles.disabledButton]} onPress={() => { void testNearbyArrival(); }}>
+          <Text style={styles.buttonText}>Test arrival 100 m away</Text>
+        </TouchableOpacity>
+        {activeTest && <TouchableOpacity accessibilityRole="button" style={styles.button} onPress={() => setTestEndpoint(null)}>
+          <Text style={styles.buttonText}>End test</Text>
+        </TouchableOpacity>}
+      </View>
+      {activeTest && <Text style={styles.hint}>Test mode: temporary endpoint 100 m north of your GPS fix, inside the 200 m arrival radius.</Text>}
       {directionOpen && <View style={styles.directionMenu}>
         {(['northbound', 'southbound'] as const).map(value => <TouchableOpacity key={value} accessibilityRole="button" accessibilityState={{ selected: direction === value }} style={[styles.button, direction === value && styles.selectedDirection]} onPress={() => {
           setDirection(value);
           setDirectionOpen(false);
         }}><Text style={styles.buttonText}>{value === 'northbound' ? 'Northbound: PITX to Monumento' : 'Southbound: Monumento to PITX'}</Text></TouchableOpacity>)}
       </View>}
-      <Text style={styles.hint}>Black dot: your location. Circle: GPS accuracy. Drag to explore; Recenter to follow again.</Text>
+      <Text style={styles.hint}>Black Dot: YOUR LOCATION. Circle: GPS accuracy. Drag to explore. Re-center to follow again.</Text>
     </View>
   </View>;
 }

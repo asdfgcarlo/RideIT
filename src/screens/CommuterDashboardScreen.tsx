@@ -176,7 +176,7 @@ export default function CommuterDashboardScreen({
               onPress={() =>
                 Alert.alert(
                   'Notifications',
-                  arrivalMessages.length ? arrivalMessages.join('\n\n') : 'No arrival alerts yet. Select a destination and enable location to receive an alert within 200 metres.',
+                  arrivalMessages.length ? arrivalMessages.join('\n\n') : 'No arrival alerts yet. \n\nSelect a destination and enable location to receive an alert within 200 meters.',
                 )
               }
             >

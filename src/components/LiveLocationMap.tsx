@@ -152,7 +152,7 @@ export default function LiveLocationMap({ destinationName = null, tripId = 0, on
           setDirectionOpen(false);
         }}><Text style={styles.buttonText}>{value === 'northbound' ? 'Northbound: PITX to Monumento' : 'Southbound: Monumento to PITX'}</Text></TouchableOpacity>)}
       </View>}
-      <Text style={styles.hint}>Blue dot: your location. Circle: GPS accuracy. Drag to explore; Recenter to follow again.</Text>
+      <Text style={styles.hint}>Black dot: your location. Circle: GPS accuracy. Drag to explore; Recenter to follow again.</Text>
     </View>
   </View>;
 }
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   message: { color: '#fff', fontSize: 13, lineHeight: 19 },
   buttons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   directionMenu: { gap: 6 },
-  selectedDirection: { backgroundColor: '#594270' },
+  selectedDirection: { backgroundColor: '#2f2f30' },
   disabledButton: { opacity: 0.5 },
   button: { backgroundColor: '#ccc9ce', borderRadius: 10, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center' },
   buttonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },

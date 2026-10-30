@@ -52,6 +52,23 @@ def health():
         }), 500
 
 
+@app.route("/api/stations", methods=["GET"])
+def get_stations():
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, station_name FROM carousel_stations ORDER BY id"
+            )
+            stations = cursor.fetchall()
+        return jsonify({"success": True, "stations": stations}), 200
+    except Exception:
+        app.logger.exception("Loading stations failed")
+        return jsonify({
+            "success": False,
+            "message": "Unable to load stations. Please try again."
+        }), 500
+
+
 @app.route("/api/register", methods=["POST"])
 def register():
     data = request.get_json(silent=True) or {}

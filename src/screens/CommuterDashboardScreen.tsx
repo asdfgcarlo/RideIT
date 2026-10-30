@@ -1,9 +1,13 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Alert,
+  ActivityIndicator,
+  FlatList,
   ImageBackground,
+  Modal,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -20,12 +24,43 @@ type Props = NativeStackScreenProps<
   'CommuterDashboard'
 >;
 
+type Station = { id: number | string; station_name: string };
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://rideit-8cl7.onrender.com';
+
 export default function CommuterDashboardScreen({
   route,
   navigation,
 }: Props) {
   const { name } = route.params;
   const firstName = name.trim().split(' ')[0] || 'Commuter';
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [stations, setStations] = useState<Station[]>([]);
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+  const [loadingStations, setLoadingStations] = useState(false);
+  const [stationError, setStationError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+
+  useEffect(() => {
+    if (!pickerVisible) return;
+    const controller = new AbortController();
+    axios.get<{ success: boolean; stations: Station[] }>(`${API_URL}/api/stations`, {
+      signal: controller.signal,
+      timeout: 30000,
+    }).then(({ data }) => {
+      if (!data.success || !Array.isArray(data.stations) || !data.stations.every(
+        (station) => station && (typeof station.id === 'number' || typeof station.id === 'string')
+          && typeof station.station_name === 'string',
+      )) throw new Error('Invalid stations response');
+      if (!controller.signal.aborted) setStations(data.stations);
+    }).catch(() => {
+      if (!controller.signal.aborted) {
+        setStationError('Unable to load stations. Please try again.');
+      }
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoadingStations(false);
+    });
+    return () => controller.abort();
+  }, [pickerVisible, retryCount]);
 
   return (
     <ImageBackground
@@ -100,19 +135,20 @@ export default function CommuterDashboardScreen({
 
           <TouchableOpacity
             style={styles.glassCard}
-            onPress={() =>
-              Alert.alert(
-                'Select Station',
-                'Station selection and route information will be connected to the RideIT station database.',
-              )
-            }
+            accessibilityRole="button"
+            accessibilityLabel={selectedStation ? `Change station, ${selectedStation.station_name}` : 'Choose your station'}
+            onPress={() => {
+              setLoadingStations(true);
+              setStationError('');
+              setPickerVisible(true);
+            }}
           >
             
 
             <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>Choose Your Station</Text>
+              <Text style={styles.cardTitle}>{selectedStation?.station_name || 'Choose Your Station'}</Text>
               <Text style={styles.cardDescription}>
-                Select your EDSA Carousel boarding point.
+                {selectedStation ? 'Tap to change your boarding station.' : 'Select your EDSA Carousel boarding point.'}
               </Text>
             </View>
 
@@ -176,11 +212,90 @@ export default function CommuterDashboardScreen({
           <Text style={styles.footer}>RideIT • Your journey, predicted.</Text>
         </ScrollView>
       </SafeAreaView>
+      <Modal
+        visible={pickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickerVisible(false)}
+      >
+        <SafeAreaView style={styles.pickerOverlay}>
+          <View style={styles.pickerPanel}>
+            <Text style={styles.sectionTitle}>Choose Your Station</Text>
+            {loadingStations ? (
+              <View style={styles.pickerMessage}>
+                <ActivityIndicator color="#FFFFFF" />
+                <Text style={styles.cardDescription}>Loading stations...</Text>
+              </View>
+            ) : stationError ? (
+              <View style={styles.pickerMessage}>
+                <Text style={styles.cardDescription}>{stationError}</Text>
+                <TouchableOpacity accessibilityRole="button" style={styles.stationRow} onPress={() => {
+                  setLoadingStations(true);
+                  setStationError('');
+                  setRetryCount((count) => count + 1);
+                }}>
+                  <Text style={styles.cardTitle}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <FlatList
+                data={stations}
+                extraData={selectedStation?.id}
+                keyExtractor={(station) => String(station.id)}
+                ListEmptyComponent={<Text style={styles.cardDescription}>No stations are available yet.</Text>}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: selectedStation?.id === item.id }}
+                    style={[styles.stationRow, selectedStation?.id === item.id && styles.selectedStationRow]}
+                    onPress={() => {
+                      setSelectedStation(item);
+                      setPickerVisible(false);
+                    }}
+                  >
+                    <Text style={styles.cardTitle}>{item.station_name}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+            <TouchableOpacity accessibilityRole="button" style={styles.logoutButton} onPress={() => setPickerVisible(false)}>
+              <Text style={styles.logoutText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  pickerOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+  },
+  pickerPanel: {
+    maxHeight: '85%',
+    backgroundColor: '#241B38',
+    borderRadius: 20,
+    padding: 20,
+  },
+  pickerMessage: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  stationRow: {
+    minHeight: 48,
+    justifyContent: 'center',
+    padding: 14,
+    marginVertical: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  selectedStationRow: {
+    backgroundColor: '#594270',
+  },
   background: {
     flex: 1,
     backgroundColor: '#160F2D',

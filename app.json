@@ -1,24 +1,21 @@
 {
-  "expo": 
-  {
+  "expo": {
     "name": "RideIT",
     "slug": "RideIT",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "ios": 
-    {
+    "ios": {
       "supportsTablet": true
     },
-
-    "android": 
-    {
-      "predictiveBackGestureEnabled": false 
+    "android": {
+      "predictiveBackGestureEnabled": false
     },
-
-    "web": 
-    {
+    "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
   }
 }

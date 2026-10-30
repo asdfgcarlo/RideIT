@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
+import LiveLocationMap from '../components/LiveLocationMap';
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
@@ -122,21 +123,12 @@ export default function CommuterDashboardScreen({
           <Text style={styles.sectionTitle}>Quick Access</Text>
 
           <View style={styles.featureRow}>
-            <TouchableOpacity
+            <View
               style={[styles.featureCard, styles.featureCardLeft]}
-              onPress={() =>
-                Alert.alert(
-                  'Live Map',
-                  'The EDSA Carousel map will be available when map integration is added.',
-                )
-              }
             >
-              
               <Text style={styles.featureTitle}>Live Map</Text>
-              <Text style={styles.featureSmall}>
-                Explore the route
-              </Text>
-            </TouchableOpacity>
+              <LiveLocationMap />
+            </View>
 
             <TouchableOpacity
               style={[styles.featureCard, styles.featureCardRight]}
@@ -349,11 +341,11 @@ const styles = StyleSheet.create({
     marginLeft: 7,
   },
   featureRow: {
-    flexDirection: 'row',
+    flexDirection: 'column',
+    gap: 14,
     marginBottom: 24,
   },
   featureCard: {
-    flex: 1,
     minHeight: 145,
     backgroundColor: 'rgba(90, 90, 92, 0.38)',
     borderWidth: 1,
@@ -362,10 +354,10 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   featureCardLeft: {
-    marginRight: 7,
+    gap: 12,
   },
   featureCardRight: {
-    marginLeft: 7,
+    minHeight: 120,
   },
   featureIconLarge: {
     fontSize: 27,

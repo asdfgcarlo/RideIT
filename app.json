@@ -15,7 +15,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow RideIT to show your live location on the commuter map."
+        }
+      ]
     ]
   }
 }

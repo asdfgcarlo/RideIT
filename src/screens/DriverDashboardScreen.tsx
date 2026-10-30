@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
+import { StatusBar } from 'expo-status-bar';
 import {
   Alert,
   ImageBackground,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Linking,
   Switch,
@@ -128,7 +128,7 @@ const handleLocationSharing = async (value: boolean) => {
       style={styles.background}
       resizeMode="cover"
     >
-      <StatusBar barStyle="light-content" backgroundColor="#160F2D" />
+      <StatusBar style="light" />
 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView

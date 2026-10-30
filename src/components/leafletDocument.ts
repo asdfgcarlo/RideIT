@@ -1,3 +1,5 @@
+import { carouselRoutes } from '../data/carouselRoutes';
+
 export type MapPosition = { latitude: number; longitude: number; accuracy: number | null };
 export type LeafletMapProps = { position: MapPosition | null; recenter: number };
 
@@ -30,6 +32,45 @@ if(window.L){
  tiles.on('tileerror',function(){notice.textContent='Map tiles unavailable. Check your internet connection.';notice.style.display='block';});
  tiles.on('tileload',function(){notice.style.display='none';});
  let marker=null,circle=null,follow=true,lastRecenter=-1;
+ const routes=${JSON.stringify(carouselRoutes)};
+ const routeLayer=L.layerGroup().addTo(map);
+ let activeDirection='northbound';
+ const directionControl=L.control({position:'bottomleft'});
+ directionControl.onAdd=function(){
+  const panel=L.DomUtil.create('div');
+  panel.style.cssText='background:white;padding:8px;border-radius:8px;box-shadow:0 1px 5px #777;font-size:12px;max-width:240px';
+  const select=document.createElement('select');
+  select.setAttribute('aria-label','Route direction');
+  select.style.cssText='min-height:44px;width:100%;font-size:13px;background:white;color:#241b38';
+  [['northbound','Northbound: PITX to Monumento'],['southbound','Southbound: Monumento to PITX']].forEach(function(item){
+   const option=document.createElement('option');option.value=item[0];option.textContent=item[1];select.appendChild(option);
+  });
+  select.onchange=function(){showRoute(select.value);};
+  panel.appendChild(select);
+  const hint=document.createElement('div');hint.textContent='24 stations · Tap a marker for its name';panel.appendChild(hint);
+  const overview=document.createElement('button');overview.textContent='Show full route';
+  overview.style.cssText='min-height:44px;width:100%;margin-top:4px';
+  overview.onclick=function(){showRoute(activeDirection);};panel.appendChild(overview);
+  L.DomEvent.disableClickPropagation(panel);L.DomEvent.disableScrollPropagation(panel);
+  return panel;
+ };
+ directionControl.addTo(map);
+ function showRoute(direction){
+  activeDirection=direction;
+  follow=false;
+  routeLayer.clearLayers();
+  const route=routes[direction];
+  const color=direction==='northbound'?'#7c3aed':'#dc2626';
+  const line=L.polyline(route.path,{color:color,weight:5,opacity:0.85}).addTo(routeLayer);
+  route.stations.forEach(function(station,index){
+   const label=document.createElement('div');
+   label.textContent=(index+1)+'. '+station.name+' ('+direction+')';
+   L.circleMarker([station.lat,station.lng],{radius:7,color:color,weight:3,fillColor:'#fff',fillOpacity:1})
+    .addTo(routeLayer).bindPopup(label).bindTooltip(station.name);
+  });
+  map.fitBounds(line.getBounds(),{paddingTopLeft:[20,20],paddingBottomRight:[20,130],animate:false});
+ }
+ showRoute(activeDirection);
  map.on('dragstart',function(){follow=false;});
  window.updateRideITLocation=function(data){
   const p=data.position;

@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   },
   pickerPanel: {
     maxHeight: '85%',
-    backgroundColor: '#241B38',
+    backgroundColor: '#646464',
     borderRadius: 20,
     padding: 20,
   },
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginVertical: 4,
     borderRadius: 12,
-    backgroundColor: 'rgba(90, 90, 92, 0.38)',
+    backgroundColor: 'rgba(150, 150, 153, 0.38)',
   },
   selectedStationRow: {
     backgroundColor: 'rgba(51, 51, 53, 0.38)',
@@ -517,9 +517,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(90, 90, 92, 0.38)',
   },
   logoutText: {
-    color: '#ccc9ce',
+    color: '#ffffff',
     fontSize: 13,
     fontWeight: '700',
+    borderColor: '#2c2b2c',
+
   },
   footer: {
     color: '#ffffff',

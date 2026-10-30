@@ -105,7 +105,7 @@ export default function LiveLocationMap() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 19, overflow: 'hidden', backgroundColor: '#ccc9ce' },
+  card: { borderRadius: 19, overflow: 'hidden', backgroundColor: '#7e7e7e' },
   map: { height: 320 },
   controls: { padding: 14, gap: 12 },
   message: { color: '#fff', fontSize: 13, lineHeight: 19 },

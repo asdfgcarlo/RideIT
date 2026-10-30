@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Linking, Platform, StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import * as Location from 'expo-location';
+import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import LeafletMap from './LeafletMap';
 import type { MapPosition, RouteDirection, TripDestination } from './leafletDocument';
 import { carouselRoutes } from '../data/carouselRoutes';
@@ -16,6 +17,7 @@ export default function LiveLocationMap({ destinationName = null, tripId = 0, on
   onArrival?: (station: string) => void;
 }) {
   const focused = useIsFocused();
+  const arrivalBeep = useAudioPlayer(require('../../assets/sounds/arrival-beep.wav'));
   const mounted = useRef(true);
   const notifiedTrips = useRef(new Set<string>());
   const fixTime = useRef(0);
@@ -54,13 +56,23 @@ export default function LiveLocationMap({ destinationName = null, tripId = 0, on
     if (Platform.OS !== 'web') {
       Vibration.vibrate(Platform.OS === 'ios' ? [0, 200, 200] : [0, 150, 200, 150, 200, 150], false);
     }
+    void (async () => {
+      try {
+        await setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: false });
+        if (!mounted.current || AppState.currentState !== 'active') return;
+        await arrivalBeep.seekTo(0);
+        arrivalBeep.play();
+      } catch {
+        if (mounted.current) setMessage('Arrival alert sent. Beep could not play; check your media volume and audio output.');
+      }
+    })();
     onArrival?.(destination.name);
     void showArrivalNotification(destination.name).catch(() => false).then(shown => {
       if (!shown && mounted.current && AppState.currentState === 'active') {
         Alert.alert(`Arriving at ${destination.name}`, `You are arriving at ${destination.name}. \nPrepare to get off at your destination.`);
       }
     });
-  }, [position, destination, tripKey, activeTest, enabled, focused, appActive, onArrival]);
+  }, [position, destination, tripKey, activeTest, enabled, focused, appActive, onArrival, arrivalBeep]);
 
   const testNearbyArrival = async () => {
     setRequesting(true);

@@ -10,7 +10,9 @@
     },
     "android": {
       "predictiveBackGestureEnabled": false,
-      "permissions": ["android.permission.VIBRATE"]
+      "permissions": [
+        "android.permission.VIBRATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -27,6 +29,15 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Allow RideIT to show your live location on the commuter map."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false,
+          "enableBackgroundRecording": false
         }
       ]
     ]

@@ -27,7 +27,7 @@ type RegisterResponse = {
 
 export default function RegisterScreen({ navigation }: Props) {
   // Use your computer's actual IPv4 address.
-  const API_URL = 'http://192.168.100.130:5000';
+  const API_URL = 'https://rideit-8cl7.onrender.com';
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

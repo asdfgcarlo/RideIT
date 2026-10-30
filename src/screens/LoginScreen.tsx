@@ -36,7 +36,7 @@ export default function LoginScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const API_URL = 'http://192.168.100.130:5000';
+  const API_URL = 'https://rideit-8cl7.onrender.com';
 
   async function handleLogin() {
     if (!email.trim() || !password) {

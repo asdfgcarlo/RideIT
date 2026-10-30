@@ -291,14 +291,14 @@ const styles = StyleSheet.create({
     padding: 14,
     marginVertical: 4,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(90, 90, 92, 0.38)',
   },
   selectedStationRow: {
-    backgroundColor: '#594270',
+    backgroundColor: 'rgba(51, 51, 53, 0.38)',
   },
   background: {
     flex: 1,
-    backgroundColor: '#160F2D',
+    backgroundColor: 'rgba(90, 90, 92, 0.38)',
   },
   safeArea: {
     flex: 1,

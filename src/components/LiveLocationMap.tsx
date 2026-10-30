@@ -105,12 +105,12 @@ export default function LiveLocationMap() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 19, overflow: 'hidden', backgroundColor: '#282135' },
+  card: { borderRadius: 19, overflow: 'hidden', backgroundColor: '#ccc9ce' },
   map: { height: 320 },
   controls: { padding: 14, gap: 12 },
   message: { color: '#fff', fontSize: 13, lineHeight: 19 },
   buttons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  button: { backgroundColor: '#e5def4', borderRadius: 10, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center' },
-  buttonText: { color: '#160F2D', fontWeight: '700', fontSize: 13 },
-  hint: { color: '#ccc9ce', fontSize: 11, lineHeight: 16 },
+  button: { backgroundColor: '#ccc9ce', borderRadius: 10, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center' },
+  buttonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+  hint: { color: '#ffffff', fontSize: 11, lineHeight: 16 },
 });

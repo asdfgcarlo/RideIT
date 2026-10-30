@@ -32,7 +32,7 @@ export default function CommuterDashboardScreen({
       style={styles.background}
       resizeMode="cover"
     >
-      <StatusBar barStyle="light-content" backgroundColor="#160F2D" />
+      <StatusBar barStyle="light-content" />
 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView

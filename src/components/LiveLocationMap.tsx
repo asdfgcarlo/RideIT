@@ -4,7 +4,7 @@ import { useIsFocused } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import LeafletMap from './LeafletMap';
-import type { MapPosition, RouteDirection, TripDestination } from './leafletDocument';
+import type { MapPosition, RouteDirection } from './leafletDocument';
 import { carouselRoutes } from '../data/carouselRoutes';
 import { distanceInMetres } from '../utils/arrivalDistance';
 import { enableArrivalNotifications, showArrivalNotification } from '../services/arrivalNotifications';
@@ -32,12 +32,9 @@ export default function LiveLocationMap({ destinationName = null, tripId = 0, on
   const [direction, setDirection] = useState<RouteDirection>('northbound');
   const [directionOpen, setDirectionOpen] = useState(false);
   const tripKey = `${tripId}:${direction}:${destinationName || ''}`;
-  const [testEndpoint, setTestEndpoint] = useState<{ tripKey: string; id: number; destination: TripDestination } | null>(null);
-  const activeTest = testEndpoint?.tripKey === tripKey ? testEndpoint : null;
-  const stationDestination = destinationName
+  const destination = destinationName
     ? carouselRoutes[direction].stations.find(station => stationKey(station.name) === stationKey(destinationName)) ?? null
     : null;
-  const destination = activeTest?.destination ?? stationDestination;
 
   useEffect(() => {
     mounted.current = true;
@@ -46,7 +43,7 @@ export default function LiveLocationMap({ destinationName = null, tripId = 0, on
   }, []);
 
   useEffect(() => {
-    const key = activeTest ? `test:${activeTest.id}` : tripKey;
+    const key = tripKey;
     if (!enabled || !focused || !appActive || !destination || !position || notifiedTrips.current.has(key)) return;
     // Ignore stale or imprecise fixes so GPS drift does not trigger an arrival.
     if (Date.now() - fixTime.current > 15000 || position.accuracy == null || position.accuracy > 100) return;
@@ -72,35 +69,7 @@ export default function LiveLocationMap({ destinationName = null, tripId = 0, on
         Alert.alert(`Arriving at ${destination.name}`, `You are arriving at ${destination.name}. \nPrepare to get off at your destination.`);
       }
     });
-  }, [position, destination, tripKey, activeTest, enabled, focused, appActive, onArrival, arrivalBeep]);
-
-  const testNearbyArrival = async () => {
-    setRequesting(true);
-    try {
-      await enableArrivalNotifications().catch(() => false);
-      const fix = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      if (!mounted.current) return;
-      if (fix.coords.accuracy == null || fix.coords.accuracy > 100 || Math.abs(fix.coords.latitude) > 89) {
-        Alert.alert('GPS not ready', 'Wait for a more accurate location outdoors, then try again.');
-        return;
-      }
-      fixTime.current = fix.timestamp;
-      setPosition(fix.coords);
-      setTestEndpoint({
-        tripKey,
-        id: Date.now(),
-        destination: {
-          name: 'Test endpoint (100 m away)',
-          lat: fix.coords.latitude + (100 / 6371000) * (180 / Math.PI),
-          lng: fix.coords.longitude,
-        },
-      });
-    } catch {
-      Alert.alert('Location unavailable', 'Enable location and try again.');
-    } finally {
-      if (mounted.current) setRequesting(false);
-    }
-  };
+  }, [position, destination, tripKey, enabled, focused, appActive, onArrival, arrivalBeep]);
 
   const enableLocation = async () => {
     setRequesting(true);
@@ -173,7 +142,7 @@ export default function LiveLocationMap({ destinationName = null, tripId = 0, on
   return <View style={styles.card}>
     <View style={styles.map}><LeafletMap position={enabled && focused && appActive ? position : null} recenter={recenter} direction={direction} overview={overview} destination={destination} /></View>
     <View style={styles.controls}>
-      {(destinationName || activeTest) && <Text style={styles.message}>{destination ? `Trip endpoint: ${destination.name} (yellow marker)` : `Coordinates unavailable for ${destinationName}.`}</Text>}
+      {destinationName && <Text style={styles.message}>{destination ? `Trip endpoint: ${destination.name} (yellow marker)` : `Coordinates unavailable for ${destinationName}.`}</Text>}
       {destination && <Text style={styles.hint}>Arrival alert within 200 m while this dashboard is open. Enable location to start.</Text>}
       <Text accessibilityLiveRegion="polite" style={styles.message}>{enabled && !appActive ? 'Location paused while the app is in the background.' : message}</Text>
       <View style={styles.buttons}>
@@ -192,15 +161,6 @@ export default function LiveLocationMap({ destinationName = null, tripId = 0, on
           <Text style={styles.buttonText}>Show Full Route</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.buttons}>
-        <TouchableOpacity accessibilityRole="button" disabled={!enabled || !position || requesting} style={[styles.button, (!enabled || !position || requesting) && styles.disabledButton]} onPress={() => { void testNearbyArrival(); }}>
-          <Text style={styles.buttonText}>Test arrival 100 m away</Text>
-        </TouchableOpacity>
-        {activeTest && <TouchableOpacity accessibilityRole="button" style={styles.button} onPress={() => setTestEndpoint(null)}>
-          <Text style={styles.buttonText}>End test</Text>
-        </TouchableOpacity>}
-      </View>
-      {activeTest && <Text style={styles.hint}>Test mode: temporary endpoint 100 m north of your GPS fix, inside the 200 m arrival radius.</Text>}
       {directionOpen && <View style={styles.directionMenu}>
         {(['northbound', 'southbound'] as const).map(value => <TouchableOpacity key={value} accessibilityRole="button" accessibilityState={{ selected: direction === value }} style={[styles.button, direction === value && styles.selectedDirection]} onPress={() => {
           setDirection(value);

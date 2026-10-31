@@ -13,13 +13,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/AppNavigator";
+import { useSession } from "../auth/SessionProvider";
 
-type Props = NativeStackScreenProps<RootStackParamList, "DriverDashboard">;
-
-export default function DriverDashboardScreen({ route, navigation }: Props) {
-  const { name } = route.params;
+export default function DriverDashboardScreen() {
+  const { session, signOut } = useSession();
+  const name = session?.user.full_name || "Driver";
   const firstName = name.trim().split(" ")[0] || "Driver";
 
   const [isAvailable, setIsAvailable] = useState(false);
@@ -101,7 +99,7 @@ export default function DriverDashboardScreen({ route, navigation }: Props) {
         "Location Enabled",
         `Your current location was accessed successfully.\n\nLatitude: ${position.coords.latitude.toFixed(6)}\nLongitude: ${position.coords.longitude.toFixed(6)}`,
       );
-    } catch (error) {
+    } catch {
       setIsLocationSharing(false);
 
       Alert.alert(
@@ -279,7 +277,7 @@ export default function DriverDashboardScreen({ route, navigation }: Props) {
                 {
                   text: "Log Out",
                   style: "destructive",
-                  onPress: () => navigation.replace("Login"),
+                  onPress: () => signOut(),
                 },
               ])
             }

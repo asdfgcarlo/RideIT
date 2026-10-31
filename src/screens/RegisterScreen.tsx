@@ -13,11 +13,9 @@ import {
   View,
 } from "react-native";
 import { BlurView } from "expo-blur";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/AppNavigator";
-import axios from "axios";
-
-type Props = NativeStackScreenProps<RootStackParamList, "Register">;
+import { router } from "expo-router";
+import axios, { isAxiosError } from "axios";
+import { API_URL } from "../services/api";
 type AccountType = "Commuter" | "Driver";
 
 type RegisterResponse = {
@@ -25,9 +23,7 @@ type RegisterResponse = {
   message: string;
 };
 
-export default function RegisterScreen({ navigation }: Props) {
-  const API_URL = "https://rideit-8cl7.onrender.com";
-
+export default function RegisterScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -88,7 +84,7 @@ export default function RegisterScreen({ navigation }: Props) {
           [
             {
               text: "Go to Login",
-              onPress: () => navigation.replace("Login"),
+              onPress: () => router.replace("/login"),
             },
           ],
         );
@@ -99,7 +95,7 @@ export default function RegisterScreen({ navigation }: Props) {
         );
       }
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
+      if (isAxiosError(error)) {
         const status = error.response?.status;
         const serverMessage = error.response?.data?.message;
 
@@ -255,7 +251,7 @@ export default function RegisterScreen({ navigation }: Props) {
               <View style={styles.footer}>
                 <Text style={styles.footerText}>Already have an account? </Text>
                 <TouchableOpacity
-                  onPress={() => navigation.navigate("Login")}
+                  onPress={() => router.replace("/login")}
                   disabled={isLoading}
                 >
                   <Text style={styles.loginLink}>Log In</Text>

@@ -14,18 +14,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/AppNavigator";
+import { useSession } from "../auth/SessionProvider";
+import { API_URL } from "../services/api";
 import LiveLocationMap from "../components/LiveLocationMap";
 
-type Props = NativeStackScreenProps<RootStackParamList, "CommuterDashboard">;
-
 type Station = { id: number | string; station_name: string };
-const API_URL =
-  process.env.EXPO_PUBLIC_API_URL || "https://rideit-8cl7.onrender.com";
 
-export default function CommuterDashboardScreen({ route, navigation }: Props) {
-  const { name } = route.params;
+export default function CommuterDashboardScreen() {
+  const { session, signOut } = useSession();
+  const name = session?.user.full_name || "Commuter";
   const firstName = name.trim().split(" ")[0] || "Commuter";
   const [pickerVisible, setPickerVisible] = useState(false);
   const [stations, setStations] = useState<Station[]>([]);
@@ -217,7 +214,7 @@ export default function CommuterDashboardScreen({ route, navigation }: Props) {
                 {
                   text: "Log Out",
                   style: "destructive",
-                  onPress: () => navigation.replace("Login"),
+                  onPress: () => signOut(),
                 },
               ])
             }

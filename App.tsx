@@ -1,10 +1,2 @@
-import { NavigationContainer } from "@react-navigation/native";
-import AppNavigator from "./src/navigation/AppNavigator";
-
-export default function App() {
-  return (
-    <NavigationContainer>
-      <AppNavigator />
-    </NavigationContainer>
-  );
-}
+// The application now starts through Expo Router in index.ts.
+export { default } from "./src/app/_layout";

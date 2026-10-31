@@ -13,29 +13,16 @@ import {
   View,
 } from "react-native";
 import { BlurView } from "expo-blur";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/AppNavigator";
-import axios from "axios";
+import { router } from "expo-router";
+import { isAxiosError } from "axios";
+import { useSession } from "../auth/SessionProvider";
+import { authenticate } from "../services/api";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Login">;
-
-type LoginResponse = {
-  success: boolean;
-  message: string;
-  user: {
-    id: number;
-    full_name: string;
-    email: string;
-    account_type: "Commuter" | "Driver";
-  };
-};
-
-export default function LoginScreen({ navigation }: Props) {
+export default function LoginScreen() {
+  const { signIn, notice } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  const API_URL = "https://rideit-8cl7.onrender.com";
 
   async function handleLogin() {
     if (!email.trim() || !password) {
@@ -48,42 +35,11 @@ export default function LoginScreen({ navigation }: Props) {
     setIsLoading(true);
 
     try {
-      const response = await axios.post<LoginResponse>(
-        `${API_URL}/api/login`,
-        {
-          email: email.trim().toLowerCase(),
-          password,
-        },
-        {
-          timeout: 15000,
-        },
-      );
-
-      const user = response.data.user;
-
-      if (!response.data.success || !user) {
-        Alert.alert(
-          "Login Failed",
-          response.data.message || "Unable to log in.",
-        );
-        return;
-      }
-
-      if (user.account_type === "Commuter") {
-        navigation.replace("CommuterDashboard", {
-          name: user.full_name,
-          userId: user.id,
-        });
-      } else if (user.account_type === "Driver") {
-        navigation.replace("DriverDashboard", {
-          name: user.full_name,
-          userId: user.id,
-        });
-      } else {
-        Alert.alert("Login Failed", "Invalid account type.");
-      }
+      const session = await authenticate(email.trim().toLowerCase(), password);
+      setPassword("");
+      signIn(session);
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
+      if (isAxiosError(error)) {
         const message =
           error.response?.data?.message ||
           (error.code === "ECONNABORTED"
@@ -94,7 +50,7 @@ export default function LoginScreen({ navigation }: Props) {
       } else {
         Alert.alert(
           "Login Failed",
-          "An unexpected error occurred. Please try again.",
+          error instanceof Error ? error.message : "An unexpected error occurred. Please try again.",
         );
       }
     } finally {
@@ -129,6 +85,9 @@ export default function LoginScreen({ navigation }: Props) {
               <Text style={styles.description}>
                 Sign in to continue your journey.
               </Text>
+              {notice ? (
+                <Text accessibilityRole="alert" style={styles.sessionNotice}>{notice}</Text>
+              ) : null}
 
               <Text style={styles.label}>Email address</Text>
               <TextInput
@@ -175,10 +134,10 @@ export default function LoginScreen({ navigation }: Props) {
               </Pressable>
 
               <View style={styles.footer}>
-                <Text style={styles.footerText}>Don't have an account? </Text>
+                <Text style={styles.footerText}>Don&apos;t have an account? </Text>
                 <Pressable
                   disabled={isLoading}
-                  onPress={() => navigation.navigate("Register")}
+                  onPress={() => router.push("/register")}
                 >
                   <Text style={styles.link}>Register</Text>
                 </Pressable>
@@ -194,6 +153,12 @@ export default function LoginScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  sessionNotice: {
+    color: "#FFDFAC",
+    fontSize: 14,
+    lineHeight: 21,
+    marginBottom: 18,
+  },
   flex: {
     flex: 1,
   },

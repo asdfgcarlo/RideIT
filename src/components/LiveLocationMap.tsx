@@ -10,7 +10,7 @@ import {
   Vibration,
   View,
 } from "react-native";
-import { useIsFocused } from "@react-navigation/native";
+import { useIsFocused } from "expo-router";
 import * as Location from "expo-location";
 import { setAudioModeAsync, useAudioPlayer } from "expo-audio";
 import LeafletMap from "./LeafletMap";

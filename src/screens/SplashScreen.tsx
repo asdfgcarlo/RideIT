@@ -7,19 +7,16 @@ import {
   View,
 } from "react-native";
 import { BlurView } from "expo-blur";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/AppNavigator";
+import { router } from "expo-router";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
-
-export default function SplashScreen({ navigation }: Props) {
+export default function SplashScreen() {
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.replace("Login");
+      router.replace("/login");
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, [navigation]);
+  }, []);
 
   return (
     <ImageBackground

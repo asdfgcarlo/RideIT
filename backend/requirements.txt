@@ -3,3 +3,4 @@ Flask-MySQLdb
 Flask-Cors
 python-dotenv
 gunicorn
+itsdangerous>=2.2,<3

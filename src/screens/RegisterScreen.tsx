@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -11,14 +11,14 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { BlurView } from 'expo-blur';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/AppNavigator';
-import axios from 'axios';
+} from "react-native";
+import { BlurView } from "expo-blur";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/AppNavigator";
+import axios from "axios";
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
-type AccountType = 'Commuter' | 'Driver';
+type Props = NativeStackScreenProps<RootStackParamList, "Register">;
+type AccountType = "Commuter" | "Driver";
 
 type RegisterResponse = {
   success: boolean;
@@ -26,37 +26,37 @@ type RegisterResponse = {
 };
 
 export default function RegisterScreen({ navigation }: Props) {
-  const API_URL = 'https://rideit-8cl7.onrender.com';
+  const API_URL = "https://rideit-8cl7.onrender.com";
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [accountType, setAccountType] = useState<AccountType>('Commuter');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [accountType, setAccountType] = useState<AccountType>("Commuter");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleRegister() {
     if (!name.trim() || !email.trim() || !password || !confirmPassword) {
-      Alert.alert('Missing Information', 'Please fill in all fields.');
+      Alert.alert("Missing Information", "Please fill in all fields.");
       return;
     }
 
-    if (!email.includes('@') || !email.includes('.')) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+    if (!email.includes("@") || !email.includes(".")) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
       return;
     }
 
     if (password.length < 8) {
       Alert.alert(
-        'Weak Password',
-        'Your password must contain at least 8 characters.',
+        "Weak Password",
+        "Your password must contain at least 8 characters.",
       );
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Password Mismatch', 'Your passwords do not match.');
+      Alert.alert("Password Mismatch", "Your passwords do not match.");
       return;
     }
 
@@ -76,26 +76,26 @@ export default function RegisterScreen({ navigation }: Props) {
         {
           timeout: 15000,
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         },
       );
 
       if (response.data.success) {
         Alert.alert(
-          'Registration Successful!',
-          'Your RideIT account has been saved. You can now log in.',
+          "Registration Successful!",
+          "Your RideIT account has been saved. You can now log in.",
           [
             {
-              text: 'Go to Login',
-              onPress: () => navigation.replace('Login'),
+              text: "Go to Login",
+              onPress: () => navigation.replace("Login"),
             },
           ],
         );
       } else {
         Alert.alert(
-          'Registration Failed',
-          response.data.message || 'Unable to create your account.',
+          "Registration Failed",
+          response.data.message || "Unable to create your account.",
         );
       }
     } catch (error: unknown) {
@@ -105,19 +105,19 @@ export default function RegisterScreen({ navigation }: Props) {
 
         let message =
           serverMessage ||
-          'Cannot connect to the RideIT backend. Check your network and API URL.';
+          "Cannot connect to the RideIT backend. Check your network and API URL.";
 
         if (status === 409) {
-          message = 'This email is already registered. Please log in instead.';
-        } else if (error.code === 'ECONNABORTED') {
-          message = 'The request timed out. Please try again.';
+          message = "This email is already registered. Please log in instead.";
+        } else if (error.code === "ECONNABORTED") {
+          message = "The request timed out. Please try again.";
         }
 
-        Alert.alert('Registration Failed', message);
+        Alert.alert("Registration Failed", message);
       } else {
         Alert.alert(
-          'Registration Failed',
-          'An unexpected error occurred. Please try again.',
+          "Registration Failed",
+          "An unexpected error occurred. Please try again.",
         );
       }
     } finally {
@@ -127,14 +127,14 @@ export default function RegisterScreen({ navigation }: Props) {
 
   return (
     <ImageBackground
-      source={require('../../assets/images/f_ScreenBG.jpg')}
+      source={require("../../assets/images/f_ScreenBG.jpg")}
       style={styles.background}
       resizeMode="cover"
     >
       <View style={styles.overlay}>
         <KeyboardAvoidingView
           style={styles.keyboardView}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -185,14 +185,12 @@ export default function RegisterScreen({ navigation }: Props) {
                 disabled={isLoading}
               >
                 <Text style={styles.dropdownText}>{accountType}</Text>
-                <Text style={styles.arrow}>
-                  {dropdownVisible ? '▲' : '▼'}
-                </Text>
+                <Text style={styles.arrow}>{dropdownVisible ? "▲" : "▼"}</Text>
               </TouchableOpacity>
 
               {dropdownVisible && (
                 <View style={styles.dropdownMenu}>
-                  {(['Commuter', 'Driver'] as AccountType[]).map((type) => (
+                  {(["Commuter", "Driver"] as AccountType[]).map((type) => (
                     <TouchableOpacity
                       key={type}
                       style={[
@@ -250,18 +248,14 @@ export default function RegisterScreen({ navigation }: Props) {
                 {isLoading ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.registerButtonText}>
-                    CREATE ACCOUNT
-                  </Text>
+                  <Text style={styles.registerButtonText}>CREATE ACCOUNT</Text>
                 )}
               </TouchableOpacity>
 
               <View style={styles.footer}>
-                <Text style={styles.footerText}>
-                  Already have an account?{' '}
-                </Text>
+                <Text style={styles.footerText}>Already have an account? </Text>
                 <TouchableOpacity
-                  onPress={() => navigation.navigate('Login')}
+                  onPress={() => navigation.navigate("Login")}
                   disabled={isLoading}
                 >
                   <Text style={styles.loginLink}>Log In</Text>
@@ -281,55 +275,55 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(90, 90, 92, 0.38)',
+    backgroundColor: "rgba(90, 90, 92, 0.38)",
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 24,
     paddingVertical: 35,
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 22,
   },
   logo: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 42,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: 2,
   },
   tagline: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 14,
     marginTop: 5,
   },
   card: {
     padding: 24,
     borderRadius: 25,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
-    backgroundColor: 'rgba(90, 90, 92, 0.38)',
+    borderColor: "rgba(255,255,255,0.22)",
+    backgroundColor: "rgba(90, 90, 92, 0.38)",
   },
   title: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 27,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 6,
   },
   subtitle: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 13,
     marginBottom: 22,
   },
   label: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
     marginTop: 13,
   },
@@ -337,88 +331,88 @@ const styles = StyleSheet.create({
     height: 49,
     borderRadius: 12,
     paddingHorizontal: 15,
-    color: '#FFFFFF',
-    backgroundColor: 'rgba(255,255,255,0.09)',
+    color: "#FFFFFF",
+    backgroundColor: "rgba(255,255,255,0.09)",
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.20)',
+    borderColor: "rgba(255,255,255,0.20)",
   },
   dropdown: {
     height: 49,
     borderRadius: 12,
     paddingHorizontal: 15,
-    backgroundColor: 'rgba(255,255,255,0.09)',
+    backgroundColor: "rgba(255,255,255,0.09)",
     borderWidth: 1,
-    borderColor: 'rgba(90, 90, 92, 0.38)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    borderColor: "rgba(90, 90, 92, 0.38)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   dropdownText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 15,
   },
   arrow: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 13,
   },
   dropdownMenu: {
     marginTop: 6,
     borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#34234D',
+    overflow: "hidden",
+    backgroundColor: "#34234D",
     borderWidth: 1,
-    borderColor: 'rgba(90, 90, 92, 0.38)',
+    borderColor: "rgba(90, 90, 92, 0.38)",
   },
   dropdownOption: {
     minHeight: 48,
     paddingHorizontal: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   selectedOption: {
-    backgroundColor: 'rgba(196,164,218,0.20)',
+    backgroundColor: "rgba(196,164,218,0.20)",
   },
   dropdownOptionText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 14,
   },
   checkmark: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   registerButton: {
     height: 51,
     borderRadius: 13,
-    backgroundColor: '#ccc9ce',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#ccc9ce",
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 26,
   },
   disabledButton: {
     opacity: 0.65,
   },
   registerButtonText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: 1,
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    flexWrap: "wrap",
     marginTop: 22,
   },
   footerText: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 13,
   },
   loginLink: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });

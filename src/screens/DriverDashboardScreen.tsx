@@ -1,8 +1,7 @@
-
-import React, { useState } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Location from 'expo-location';
-import { StatusBar } from 'expo-status-bar';
+import React, { useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+import * as Location from "expo-location";
+import { StatusBar } from "expo-status-bar";
 import {
   Alert,
   ImageBackground,
@@ -13,21 +12,15 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/AppNavigator';
+} from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/AppNavigator";
 
-type Props = NativeStackScreenProps<
-  RootStackParamList,
-  'DriverDashboard'
->;
+type Props = NativeStackScreenProps<RootStackParamList, "DriverDashboard">;
 
-export default function DriverDashboardScreen({
-  route,
-  navigation,
-}: Props) {
+export default function DriverDashboardScreen({ route, navigation }: Props) {
   const { name } = route.params;
-  const firstName = name.trim().split(' ')[0] || 'Driver';
+  const firstName = name.trim().split(" ")[0] || "Driver";
 
   const [isAvailable, setIsAvailable] = useState(false);
   const [isLocationSharing, setIsLocationSharing] = useState(false);
@@ -36,95 +29,91 @@ export default function DriverDashboardScreen({
     setIsAvailable(value);
 
     Alert.alert(
-      'Driver Availability',
+      "Driver Availability",
       value
-        ? 'You are now marked as available in this app.'
-        : 'You are now marked as unavailable in this app.',
+        ? "You are now marked as available in this app."
+        : "You are now marked as unavailable in this app.",
     );
   };
 
-  
-const handleLocationSharing = async (value: boolean) => {
-  // User turned the switch OFF
-  if (!value) {
-    setIsLocationSharing(false);
-
-    Alert.alert(
-      'Location Sharing',
-      'Location sharing has been turned off in RideIT.'
-    );
-    return;
-  }
-
-  try {
-    // Check whether the phone's location service is enabled
-    const servicesEnabled =
-      await Location.hasServicesEnabledAsync();
-
-    if (!servicesEnabled) {
-      Alert.alert(
-        'Location Is Turned Off',
-        'Please turn on Location on your device to use RideIT GPS features.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Open Settings',
-            onPress: () => Linking.openSettings(),
-          },
-        ]
-      );
-
-      setIsLocationSharing(false);
-      return;
-    }
-
-    // Request permission from Android or iOS
-    const permission =
-      await Location.requestForegroundPermissionsAsync();
-
-    if (!permission.granted) {
+  const handleLocationSharing = async (value: boolean) => {
+    // User turned the switch OFF
+    if (!value) {
       setIsLocationSharing(false);
 
       Alert.alert(
-        'Location Permission Required',
-        'RideIT needs access to your location to support GPS-based bus tracking.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Open Settings',
-            onPress: () => Linking.openSettings(),
-          },
-        ]
+        "Location Sharing",
+        "Location sharing has been turned off in RideIT.",
       );
-
       return;
     }
 
-    // Permission granted: retrieve the current GPS coordinates
-    const position = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
+    try {
+      // Check whether the phone's location service is enabled
+      const servicesEnabled = await Location.hasServicesEnabledAsync();
 
-    setIsLocationSharing(true);
+      if (!servicesEnabled) {
+        Alert.alert(
+          "Location Is Turned Off",
+          "Please turn on Location on your device to use RideIT GPS features.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Open Settings",
+              onPress: () => Linking.openSettings(),
+            },
+          ],
+        );
 
-    Alert.alert(
-      'Location Enabled',
-      `Your current location was accessed successfully.\n\nLatitude: ${position.coords.latitude.toFixed(6)}\nLongitude: ${position.coords.longitude.toFixed(6)}`
-    );
-  } catch (error) {
-    setIsLocationSharing(false);
+        setIsLocationSharing(false);
+        return;
+      }
 
-    Alert.alert(
-      'Location Error',
-      'RideIT could not retrieve your location. Please check your device settings and try again.'
-    );
-  }
-};
+      // Request permission from Android or iOS
+      const permission = await Location.requestForegroundPermissionsAsync();
 
+      if (!permission.granted) {
+        setIsLocationSharing(false);
+
+        Alert.alert(
+          "Location Permission Required",
+          "RideIT needs access to your location to support GPS-based bus tracking.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Open Settings",
+              onPress: () => Linking.openSettings(),
+            },
+          ],
+        );
+
+        return;
+      }
+
+      // Permission granted: retrieve the current GPS coordinates
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      setIsLocationSharing(true);
+
+      Alert.alert(
+        "Location Enabled",
+        `Your current location was accessed successfully.\n\nLatitude: ${position.coords.latitude.toFixed(6)}\nLongitude: ${position.coords.longitude.toFixed(6)}`,
+      );
+    } catch (error) {
+      setIsLocationSharing(false);
+
+      Alert.alert(
+        "Location Error",
+        "RideIT could not retrieve your location. Please check your device settings and try again.",
+      );
+    }
+  };
 
   return (
     <ImageBackground
-      source={require('../../assets/images/f_ScreenBG.jpg')}
+      source={require("../../assets/images/f_ScreenBG.jpg")}
       style={styles.background}
       resizeMode="cover"
     >
@@ -161,12 +150,12 @@ const handleLocationSharing = async (value: boolean) => {
               <View style={styles.statusTextContainer}>
                 <Text style={styles.cardEyebrow}>YOUR STATUS</Text>
                 <Text style={styles.statusTitle}>
-                  {isAvailable ? 'Available' : 'Unavailable'}
+                  {isAvailable ? "Available" : "Unavailable"}
                 </Text>
                 <Text style={styles.statusDescription}>
                   {isAvailable
-                    ? 'You are marked as ready to drive.'
-                    : 'Turn on availability when you are ready.'}
+                    ? "You are marked as ready to drive."
+                    : "Turn on availability when you are ready."}
                 </Text>
               </View>
 
@@ -179,7 +168,7 @@ const handleLocationSharing = async (value: boolean) => {
                 ]}
               >
                 <Text style={styles.statusEmoji}>
-                  {isAvailable ? '/' : '-'}
+                  {isAvailable ? "/" : "-"}
                 </Text>
               </View>
             </View>
@@ -190,10 +179,10 @@ const handleLocationSharing = async (value: boolean) => {
                 value={isAvailable}
                 onValueChange={handleAvailability}
                 trackColor={{
-                  false: '#d9d6db',
-                  true: '#b7b5b8',
+                  false: "#d9d6db",
+                  true: "#b7b5b8",
                 }}
-                thumbColor={isAvailable ? '#FFFFFF' : '#ccc9ce'}
+                thumbColor={isAvailable ? "#FFFFFF" : "#ccc9ce"}
               />
             </View>
           </View>
@@ -202,23 +191,21 @@ const handleLocationSharing = async (value: boolean) => {
           <Text style={styles.sectionTitle}>Location Services</Text>
 
           <View style={styles.glassCard}>
-            
-
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>GPS Location Sharing</Text>
               <Text style={styles.cardDescription}>
                 {isLocationSharing
-                  ? 'Enabled in the interface; GPS integration is pending.'
-                  : 'Allow RideIT to share your bus location once GPS is connected.'}
+                  ? "Enabled in the interface; GPS integration is pending."
+                  : "Allow RideIT to share your bus location once GPS is connected."}
               </Text>
             </View>
           </View>
 
           <View style={styles.switchCard}>
             <View style={styles.switchTextContainer}>
-              <Text style={styles.switchLabel}>      Share my location</Text>
+              <Text style={styles.switchLabel}> Share my location</Text>
               <Text style={styles.switchHint}>
-                {isLocationSharing ? '       Enabled' : '       Disabled'}
+                {isLocationSharing ? "       Enabled" : "       Disabled"}
               </Text>
             </View>
 
@@ -226,12 +213,10 @@ const handleLocationSharing = async (value: boolean) => {
               value={isLocationSharing}
               onValueChange={handleLocationSharing}
               trackColor={{
-                false: '#d9d6db',
-                true: '#b7b5b8',
+                false: "#d9d6db",
+                true: "#b7b5b8",
               }}
-              thumbColor={
-                isLocationSharing ? '#FFFFFF' : '#ccc9ce'
-              }
+              thumbColor={isLocationSharing ? "#FFFFFF" : "#ccc9ce"}
             />
           </View>
 
@@ -242,13 +227,11 @@ const handleLocationSharing = async (value: boolean) => {
             style={styles.glassCard}
             onPress={() =>
               Alert.alert(
-                'Current Trip',
-                'trip assignments and route information will appear here after backend integration',
+                "Current Trip",
+                "trip assignments and route information will appear here after backend integration",
               )
             }
           >
-            
-
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>Current Trip</Text>
               <Text style={styles.cardDescription}>
@@ -263,13 +246,11 @@ const handleLocationSharing = async (value: boolean) => {
             style={styles.glassCard}
             onPress={() =>
               Alert.alert(
-                'Route Information',
-                'northbound and southbound EDSA Carousel routes will be displayed here',
+                "Route Information",
+                "northbound and southbound EDSA Carousel routes will be displayed here",
               )
             }
           >
-            
-
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>Bus Route</Text>
               <Text style={styles.cardDescription}>
@@ -284,9 +265,8 @@ const handleLocationSharing = async (value: boolean) => {
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>Drive safely!</Text>
             <Text style={styles.infoText}>
-              Keep your trip information updated. Real-time location
-              updates and arrival predictions will be connected in a
-              later development step.
+              Keep your trip information updated. Real-time location updates and
+              arrival predictions will be connected in a later development step.
             </Text>
           </View>
 
@@ -294,12 +274,12 @@ const handleLocationSharing = async (value: boolean) => {
           <TouchableOpacity
             style={styles.logoutButton}
             onPress={() =>
-              Alert.alert('Log Out', 'Are you sure you want to log out?', [
-                { text: 'Cancel', style: 'cancel' },
+              Alert.alert("Log Out", "Are you sure you want to log out?", [
+                { text: "Cancel", style: "cancel" },
                 {
-                  text: 'Log Out',
-                  style: 'destructive',
-                  onPress: () => navigation.replace('Login'),
+                  text: "Log Out",
+                  style: "destructive",
+                  onPress: () => navigation.replace("Login"),
                 },
               ])
             }
@@ -317,11 +297,11 @@ const handleLocationSharing = async (value: boolean) => {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    backgroundColor: '#160F2D',
+    backgroundColor: "#160F2D",
   },
   safeArea: {
     flex: 1,
-    backgroundColor: 'rgba(90, 90, 92, 0.38)',
+    backgroundColor: "rgba(90, 90, 92, 0.38)",
   },
   container: {
     paddingHorizontal: 22,
@@ -329,35 +309,35 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   brand: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 30,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: 1,
   },
   subtitle: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 2,
     marginTop: 3,
   },
   driverBadge: {
-    backgroundColor: 'rgba(90, 90, 92, 0.38)',
+    backgroundColor: "rgba(90, 90, 92, 0.38)",
     borderWidth: 1,
-    borderColor: 'rgba(90, 90, 92, 0.38)',
+    borderColor: "rgba(90, 90, 92, 0.38)",
     borderRadius: 12,
     paddingHorizontal: 13,
     paddingVertical: 9,
   },
   driverBadgeText: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: 1,
   },
   greetingSection: {
@@ -365,47 +345,47 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   greeting: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 26,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   description: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 13,
     lineHeight: 20,
     marginTop: 7,
   },
   statusCard: {
-    backgroundColor: 'rgba(90, 90, 92, 0.38)',
+    backgroundColor: "rgba(90, 90, 92, 0.38)",
     borderWidth: 1,
-    borderColor: 'rgba(90, 90, 92, 0.38)',
+    borderColor: "rgba(90, 90, 92, 0.38)",
     borderRadius: 24,
     padding: 20,
     marginBottom: 29,
   },
   statusHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   statusTextContainer: {
     flex: 1,
     paddingRight: 12,
   },
   cardEyebrow: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: 1.8,
   },
   statusTitle: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 28,
-    fontWeight: '800',
+    fontWeight: "800",
     marginTop: 9,
   },
   statusDescription: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 12,
     lineHeight: 18,
     marginTop: 5,
@@ -414,58 +394,55 @@ const styles = StyleSheet.create({
     width: 49,
     height: 49,
     borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   statusIndicatorOn: {
-    backgroundColor: 'rgba(109,205,153,0.22)',
+    backgroundColor: "rgba(109,205,153,0.22)",
     borderWidth: 1,
-    borderColor: 'rgba(109,205,153,0.55)',
+    borderColor: "rgba(109,205,153,0.55)",
   },
   statusIndicatorOff: {
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: "rgba(255,255,255,0.10)",
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderColor: "rgba(255,255,255,0.15)",
   },
   statusEmoji: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   switchRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.13)',
+    borderTopColor: "rgba(255,255,255,0.13)",
     marginTop: 20,
     paddingTop: 16,
   },
   switchLabel: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 13,
-    fontWeight: '700',
-    
-    
+    fontWeight: "700",
   },
   sectionTitle: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: "800",
     marginBottom: 15,
-    
   },
   glassCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(90, 90, 92, 0.38)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(90, 90, 92, 0.38)",
     borderWidth: 1,
-    borderColor: 'rgba(90, 90, 92, 0.38)',
+    borderColor: "rgba(90, 90, 92, 0.38)",
     borderRadius: 19,
     padding: 16,
     marginBottom: 13,
   },
-  
+
   featureIcon: {
     fontSize: 23,
   },
@@ -474,28 +451,28 @@ const styles = StyleSheet.create({
     marginLeft: 13,
   },
   cardTitle: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   cardDescription: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 11,
     lineHeight: 17,
     marginTop: 5,
   },
   chevron: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 28,
     marginLeft: 7,
   },
   switchCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'rgba(90, 90, 92, 0.38)',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "rgba(90, 90, 92, 0.38)",
     borderWidth: 1,
-    borderColor: 'rgba(90, 90, 92, 0.38)',
+    borderColor: "rgba(90, 90, 92, 0.38)",
     borderRadius: 17,
     paddingHorizontal: 16,
     paddingVertical: 13,
@@ -506,48 +483,48 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   switchHint: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 11,
     marginTop: 5,
   },
   infoCard: {
-    backgroundColor: 'rgba(90, 90, 92, 0.38)',
+    backgroundColor: "rgba(90, 90, 92, 0.38)",
     borderRadius: 18,
     padding: 17,
     borderLeftWidth: 3,
-    borderLeftColor: '#ccc9ce',
+    borderLeftColor: "#ccc9ce",
     marginTop: 13,
   },
   infoTitle: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   infoText: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 12,
     lineHeight: 19,
     marginTop: 7,
   },
   logoutButton: {
-    alignSelf: 'center',
+    alignSelf: "center",
     marginTop: 24,
     paddingVertical: 11,
     paddingHorizontal: 25,
     borderRadius: 12,
     borderWidth: 1,
-    backgroundColor: 'rgba(90, 90, 92, 0.38)',
-    borderColor: 'rgba(90, 90, 92, 0.38)',
+    backgroundColor: "rgba(90, 90, 92, 0.38)",
+    borderColor: "rgba(90, 90, 92, 0.38)",
   },
   logoutText: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   footer: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 10,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 20,
   },
 });

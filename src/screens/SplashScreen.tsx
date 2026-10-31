@@ -1,22 +1,21 @@
-
-import { useEffect } from 'react';
+import { useEffect } from "react";
 import {
   ActivityIndicator,
   ImageBackground,
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import { BlurView } from 'expo-blur';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/AppNavigator';
+} from "react-native";
+import { BlurView } from "expo-blur";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/AppNavigator";
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
+type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
 
 export default function SplashScreen({ navigation }: Props) {
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.replace('Login');
+      navigation.replace("Login");
     }, 2500);
 
     return () => clearTimeout(timer);
@@ -24,7 +23,7 @@ export default function SplashScreen({ navigation }: Props) {
 
   return (
     <ImageBackground
-      source={require('../../assets/images/f_ScreenBG.jpg')}
+      source={require("../../assets/images/f_ScreenBG.jpg")}
       style={styles.background}
       resizeMode="cover"
     >
@@ -58,56 +57,56 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(90, 90, 92, 0.38)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(90, 90, 92, 0.38)",
+    justifyContent: "center",
+    alignItems: "center",
     padding: 24,
   },
   card: {
-    width: '100%',
+    width: "100%",
     maxWidth: 360,
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 42,
     paddingHorizontal: 24,
     borderRadius: 30,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    backgroundColor: 'rgba(90, 90, 92, 0.38)',
+    borderColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "rgba(90, 90, 92, 0.38)",
   },
   logoCircle: {
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: 'rgba(196,164,218,0.2)',
+    backgroundColor: "rgba(196,164,218,0.2)",
     borderWidth: 1,
-    borderColor: '#ccc9ce',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "#ccc9ce",
+    justifyContent: "center",
+    alignItems: "center",
   },
   logoIcon: {
     fontSize: 42,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontWeight: "800",
+    color: "#FFFFFF",
   },
   title: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 42,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: 2,
     marginTop: 18,
   },
   subtitle: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 13,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 8,
   },
   loader: {
     marginTop: 32,
   },
   loadingText: {
-    color: '#ccc9ce',
+    color: "#ccc9ce",
     fontSize: 12,
     marginTop: 12,
   },

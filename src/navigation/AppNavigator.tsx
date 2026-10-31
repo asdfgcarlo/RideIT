@@ -1,11 +1,10 @@
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
-import SplashScreen from '../screens/SplashScreen';
-import LoginScreen from '../screens/LoginScreen';
-import RegisterScreen from '../screens/RegisterScreen';
-import CommuterDashboardScreen from '../screens/CommuterDashboardScreen';
-import DriverDashboardScreen from '../screens/DriverDashboardScreen';
+import SplashScreen from "../screens/SplashScreen";
+import LoginScreen from "../screens/LoginScreen";
+import RegisterScreen from "../screens/RegisterScreen";
+import CommuterDashboardScreen from "../screens/CommuterDashboardScreen";
+import DriverDashboardScreen from "../screens/DriverDashboardScreen";
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -23,8 +22,8 @@ export default function AppNavigator() {
       initialRouteName="Splash"
       screenOptions={{
         headerShown: false,
-        animation: 'fade',
-        contentStyle: { backgroundColor: '#160F2D' },
+        animation: "fade",
+        contentStyle: { backgroundColor: "#160F2D" },
       }}
     >
       <Stack.Screen name="Splash" component={SplashScreen} />
@@ -34,10 +33,7 @@ export default function AppNavigator() {
         name="CommuterDashboard"
         component={CommuterDashboardScreen}
       />
-      <Stack.Screen
-        name="DriverDashboard"
-        component={DriverDashboardScreen}
-      />
+      <Stack.Screen name="DriverDashboard" component={DriverDashboardScreen} />
     </Stack.Navigator>
   );
 }

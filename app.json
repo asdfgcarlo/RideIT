@@ -10,9 +10,7 @@
     },
     "android": {
       "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "android.permission.VIBRATE"
-      ]
+      "permissions": ["android.permission.VIBRATE"]
     },
     "web": {
       "favicon": "./assets/favicon.png"

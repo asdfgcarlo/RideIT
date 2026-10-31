@@ -1,9 +1,19 @@
-import { carouselRoutes } from '../data/carouselRoutes';
+import { carouselRoutes } from "../data/carouselRoutes";
 
-export type MapPosition = { latitude: number; longitude: number; accuracy: number | null };
-export type RouteDirection = 'northbound' | 'southbound';
+export type MapPosition = {
+  latitude: number;
+  longitude: number;
+  accuracy: number | null;
+};
+export type RouteDirection = "northbound" | "southbound";
 export type TripDestination = { name: string; lat: number; lng: number };
-export type LeafletMapProps = { position: MapPosition | null; recenter: number; direction: RouteDirection; overview: number; destination: TripDestination | null };
+export type LeafletMapProps = {
+  position: MapPosition | null;
+  recenter: number;
+  direction: RouteDirection;
+  overview: number;
+  destination: TripDestination | null;
+};
 
 // Kept stable so GPS updates move the marker without reloading the map.
 export const leafletDocument = `<!DOCTYPE html>
@@ -96,4 +106,3 @@ if(window.L){
  report('ready');
 }
 </script></body></html>`;
-

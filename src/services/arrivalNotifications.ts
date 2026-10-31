@@ -1,6 +1,6 @@
-import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import { AndroidImportance } from 'expo-notifications';
+import { Platform } from "react-native";
+import * as Notifications from "expo-notifications";
+import { AndroidImportance } from "expo-notifications";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -12,11 +12,11 @@ Notifications.setNotificationHandler({
 });
 
 export async function enableArrivalNotifications() {
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('arrivals', {
-      name: 'Station arrival alerts',
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("arrivals", {
+      name: "Station arrival alerts",
       importance: AndroidImportance.HIGH,
-      sound: 'default',
+      sound: "default",
     });
   }
   const permission = await Notifications.getPermissionsAsync();
@@ -30,10 +30,10 @@ export async function showArrivalNotification(station: string) {
     content: {
       title: `Arriving at ${station}`,
       body: `You are arriving at ${station}. Prepare to get off at your destination.`,
-      sound: 'default',
-      data: { station, kind: 'arrival' },
+      sound: "default",
+      data: { station, kind: "arrival" },
     },
-    trigger: Platform.OS === 'android' ? { channelId: 'arrivals' } : null,
+    trigger: Platform.OS === "android" ? { channelId: "arrivals" } : null,
   });
   return true;
 }

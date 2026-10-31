@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     borderRadius: 12,
     overflow: "hidden",
-    backgroundColor: "#34234D",
+    backgroundColor: "#ccc9ce",
     borderWidth: 1,
     borderColor: "rgba(90, 90, 92, 0.38)",
   },
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   selectedOption: {
-    backgroundColor: "rgba(196,164,218,0.20)",
+    backgroundColor: "rgba(90, 90, 92, 0.38)",
   },
   dropdownOptionText: {
     color: "#FFFFFF",

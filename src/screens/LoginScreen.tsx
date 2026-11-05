@@ -92,7 +92,7 @@ export default function LoginScreen() {
               <Text style={styles.label}>Email address</Text>
               <TextInput
                 style={styles.input}
-                placeholder="JuanDelaCruz@dmcfi.edu.ph"
+                placeholder="JuanDelaCruz@gmail.com"
                 placeholderTextColor="#ccc9ce"
                 keyboardType="email-address"
                 autoCapitalize="none"

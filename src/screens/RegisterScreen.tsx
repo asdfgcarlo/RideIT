@@ -16,26 +16,14 @@ import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import axios, { isAxiosError } from "axios";
 import { API_URL } from "../services/api";
-
 type AccountType = "Commuter" | "Driver";
-type RegisterScreenProps = {
-  onNavigateToLogin?: () => void;
-};
 
 type RegisterResponse = {
   success: boolean;
   message: string;
 };
 
-type RegistrationNotice = {
-  title: string;
-  message: string;
-  success: boolean;
-};
-
-export default function RegisterScreen({
-  onNavigateToLogin,
-}: RegisterScreenProps = {}) {
+export default function RegisterScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,44 +31,20 @@ export default function RegisterScreen({
   const [accountType, setAccountType] = useState<AccountType>("Commuter");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [notice, setNotice] = useState<RegistrationNotice | null>(null);
-  const formDisabled = isLoading || notice?.success === true;
-
-  function navigateToLogin() {
-    if (onNavigateToLogin) {
-      onNavigateToLogin();
-    } else {
-      router.replace("/login");
-    }
-  }
-
-  function showNotice(title: string, message: string, success = false) {
-    if (Platform.OS === "web") {
-      setNotice({ title, message, success });
-    } else {
-      Alert.alert(
-        title,
-        message,
-        success ? [{ text: "Go to Login", onPress: navigateToLogin }] : undefined,
-      );
-    }
-  }
 
   async function handleRegister() {
-    if (formDisabled) return;
-
     if (!name.trim() || !email.trim() || !password || !confirmPassword) {
-      showNotice("Missing Information", "Please fill in all fields.");
+      Alert.alert("Missing Information", "Please fill in all fields.");
       return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      showNotice("Invalid Email", "Please enter a valid email address.");
+    if (!email.includes("@") || !email.includes(".")) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
       return;
     }
 
     if (password.length < 8) {
-      showNotice(
+      Alert.alert(
         "Weak Password",
         "Your password must contain at least 8 characters.",
       );
@@ -88,12 +52,12 @@ export default function RegisterScreen({
     }
 
     if (password !== confirmPassword) {
-      showNotice("Password Mismatch", "Your passwords do not match.");
+      Alert.alert("Password Mismatch", "Your passwords do not match.");
       return;
     }
 
-    setNotice(null);
-    setDropdownVisible(false);
+    if (isLoading) return;
+
     setIsLoading(true);
 
     try {
@@ -114,13 +78,18 @@ export default function RegisterScreen({
       );
 
       if (response.data.success) {
-        showNotice(
+        Alert.alert(
           "Registration Successful!",
           "Your RideIT account has been saved. You can now log in.",
-          true,
+          [
+            {
+              text: "Go to Login",
+              onPress: () => router.replace("/login"),
+            },
+          ],
         );
       } else {
-        showNotice(
+        Alert.alert(
           "Registration Failed",
           response.data.message || "Unable to create your account.",
         );
@@ -140,9 +109,9 @@ export default function RegisterScreen({
           message = "The request timed out. Please try again.";
         }
 
-        showNotice("Registration Failed", message);
+        Alert.alert("Registration Failed", message);
       } else {
-        showNotice(
+        Alert.alert(
           "Registration Failed",
           "An unexpected error occurred. Please try again.",
         );
@@ -177,12 +146,6 @@ export default function RegisterScreen({
               <Text style={styles.subtitle}>
                 Join RideIT and travel smarter.
               </Text>
-              {notice && (
-                <View accessibilityRole="alert" style={styles.notice}>
-                  <Text style={styles.noticeTitle}>{notice.title}</Text>
-                  <Text style={styles.noticeMessage}>{notice.message}</Text>
-                </View>
-              )}
 
               <Text style={styles.label}>Full Name</Text>
               <TextInput
@@ -193,7 +156,7 @@ export default function RegisterScreen({
                 onChangeText={setName}
                 autoCapitalize="words"
                 autoComplete="name"
-                editable={!formDisabled}
+                editable={!isLoading}
               />
 
               <Text style={styles.label}>Email Address</Text>
@@ -207,7 +170,7 @@ export default function RegisterScreen({
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="email"
-                editable={!formDisabled}
+                editable={!isLoading}
               />
 
               <Text style={styles.label}>Account Type</Text>
@@ -215,10 +178,7 @@ export default function RegisterScreen({
                 style={styles.dropdown}
                 onPress={() => setDropdownVisible(!dropdownVisible)}
                 activeOpacity={0.8}
-                disabled={formDisabled}
-                accessibilityRole="button"
-                accessibilityLabel="Account type"
-                accessibilityState={{ expanded: dropdownVisible, disabled: formDisabled }}
+                disabled={isLoading}
               >
                 <Text style={styles.dropdownText}>{accountType}</Text>
                 <Text style={styles.arrow}>{dropdownVisible ? "▲" : "▼"}</Text>
@@ -229,8 +189,6 @@ export default function RegisterScreen({
                   {(["Commuter", "Driver"] as AccountType[]).map((type) => (
                     <TouchableOpacity
                       key={type}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: accountType === type }}
                       style={[
                         styles.dropdownOption,
                         accountType === type && styles.selectedOption,
@@ -259,7 +217,7 @@ export default function RegisterScreen({
                 secureTextEntry
                 autoCapitalize="none"
                 autoComplete="new-password"
-                editable={!formDisabled}
+                editable={!isLoading}
               />
 
               <Text style={styles.label}>Confirm Password</Text>
@@ -271,7 +229,7 @@ export default function RegisterScreen({
                 onChangeText={setConfirmPassword}
                 secureTextEntry
                 autoCapitalize="none"
-                editable={!formDisabled}
+                editable={!isLoading}
               />
 
               <TouchableOpacity
@@ -279,27 +237,22 @@ export default function RegisterScreen({
                   styles.registerButton,
                   isLoading && styles.disabledButton,
                 ]}
-                onPress={notice?.success ? navigateToLogin : handleRegister}
+                onPress={handleRegister}
                 activeOpacity={0.85}
                 disabled={isLoading}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: isLoading, busy: isLoading }}
               >
                 {isLoading ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.registerButtonText}>
-                    {notice?.success ? "GO TO LOGIN" : "CREATE ACCOUNT"}
-                  </Text>
+                  <Text style={styles.registerButtonText}>CREATE ACCOUNT</Text>
                 )}
               </TouchableOpacity>
 
               <View style={styles.footer}>
                 <Text style={styles.footerText}>Already have an account? </Text>
                 <TouchableOpacity
-                  onPress={navigateToLogin}
+                  onPress={() => router.replace("/login")}
                   disabled={isLoading}
-                  accessibilityRole="button"
                 >
                   <Text style={styles.loginLink}>Log In</Text>
                 </TouchableOpacity>
@@ -362,21 +315,6 @@ const styles = StyleSheet.create({
     color: "#ccc9ce",
     fontSize: 13,
     marginBottom: 22,
-  },
-  notice: {
-    padding: 14,
-    marginBottom: 8,
-    borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    gap: 4,
-  },
-  noticeTitle: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-  },
-  noticeMessage: {
-    color: "#FFFFFF",
-    lineHeight: 20,
   },
   label: {
     color: "#ccc9ce",

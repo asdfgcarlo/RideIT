@@ -1,5 +1,6 @@
 
 import os
+from contextlib import suppress
 from functools import wraps
 from pathlib import Path
 
@@ -11,21 +12,16 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import MySQLdb
 
 if __package__:
-    from .db import mysql
+    from .db import database_config, mysql
 else:
-    from db import mysql
+    from db import database_config, mysql
 
 load_dotenv(Path(__file__).with_name(".env"))
 
 app = Flask(__name__)
 CORS(app)
 
-app.config["MYSQL_HOST"] = os.getenv("MYSQL_HOST", "localhost")
-app.config["MYSQL_USER"] = os.getenv("MYSQL_USER", "root")
-app.config["MYSQL_PASSWORD"] = os.getenv("MYSQL_PASSWORD", "")
-app.config["MYSQL_DB"] = os.getenv("MYSQL_DB", "rideit_db")
-app.config["MYSQL_PORT"] = int(os.getenv("MYSQL_PORT", "3306"))
-app.config["MYSQL_CURSORCLASS"] = "DictCursor"
+app.config.update(database_config(os.environ))
 
 mysql.init_app(app)
 
@@ -180,8 +176,10 @@ def register():
 
     password_hash = generate_password_hash(password)
 
+    connection = None
     try:
-        cursor = mysql.connection.cursor()
+        connection = mysql.connection
+        cursor = connection.cursor()
 
         cursor.execute(
             """
@@ -192,7 +190,7 @@ def register():
             (full_name, email, password_hash, account_type)
         )
 
-        mysql.connection.commit()
+        connection.commit()
         user_id = cursor.lastrowid
         cursor.close()
 
@@ -208,15 +206,19 @@ def register():
         }), 201
 
     except MySQLdb.IntegrityError:
-        mysql.connection.rollback()
+        if connection is not None:
+            with suppress(MySQLdb.Error):
+                connection.rollback()
         return jsonify({
             "success": False,
             "message": "This email is already registered."
         }), 409
 
     except Exception:
-        mysql.connection.rollback()
         app.logger.exception("Registration failed")
+        if connection is not None:
+            with suppress(MySQLdb.Error):
+                connection.rollback()
         return jsonify({
             "success": False,
             "message": "Registration failed due to a server error."

@@ -3,7 +3,7 @@ import importlib
 import os
 import time
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 from werkzeug.security import generate_password_hash
 
@@ -127,6 +127,25 @@ class AdminAccessTests(unittest.TestCase):
         })
         self.assertEqual(response.status_code, 401)
         self.assertNotIn("access_token", response.json)
+
+    def test_connection_failures_return_json_without_private_details(self):
+        unavailable = MagicMock()
+        type(unavailable).connection = PropertyMock(
+            side_effect=RuntimeError("private connection details")
+        )
+        with patch.object(backend, "mysql", unavailable):
+            responses = [self.client.get("/api/health")]
+            for path in ("/api/login", "/api/register"):
+                responses.append(self.client.post(path, json={
+                    "full_name": "Test User", "email": "user@example.test",
+                    "password": "test-password-123",
+                }))
+        for response in responses:
+            with self.subTest(path=response.request.path):
+                self.assertEqual(response.status_code, 500)
+                self.assertTrue(response.is_json)
+                self.assertFalse(response.json["success"])
+                self.assertNotIn("private connection details", response.get_data(as_text=True))
 
     def test_public_registration_cannot_create_admins(self):
         response = self.client.post("/api/register", json={

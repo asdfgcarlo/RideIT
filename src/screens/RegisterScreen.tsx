@@ -31,6 +31,7 @@ export default function RegisterScreen() {
   const [accountType, setAccountType] = useState<AccountType>("Commuter");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const API_URL = 'https://rideit-8cl7.onrender.com';
 
   async function handleRegister() {
     if (!name.trim() || !email.trim() || !password || !confirmPassword) {

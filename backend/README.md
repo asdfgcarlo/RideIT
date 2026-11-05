@@ -12,6 +12,32 @@ variables in Render's environment; local `.env` files are ignored by Git.
 Database credentials must be configured there now; they are no longer embedded
 in the application source. Never use an `EXPO_PUBLIC_` variable for a secret.
 
+The backend accepts both variable naming styles. Nonempty `MYSQL_*` values
+take precedence when both are present:
+
+| Flask names | Original names |
+| --- | --- |
+| `MYSQL_HOST` | `DB_HOST` |
+| `MYSQL_PORT` | `DB_PORT` |
+| `MYSQL_USER` | `DB_USER` |
+| `MYSQL_PASSWORD` | `DB_PASSWORD` |
+| `MYSQL_DB` | `DB_NAME` |
+| `MYSQL_SSL_CA` | `DB_SSL_CA` |
+
+For Aiven, download your project's CA certificate from its connection settings.
+Locally, save it as `backend/certs/ca.pem` and set `DB_SSL_CA=certs/ca.pem`.
+Relative paths resolve against `backend/` first, then the repository root.
+On Render, upload it under **Environment > Secret Files** with filename `ca.pem`
+and set `DB_SSL_CA=/etc/secrets/ca.pem`. Existing relative paths also recognize
+a mounted secret file with the same filename. The backend verifies the server's
+certificate and hostname; a missing certificate produces a clear error in the
+server logs instead of disabling verification. Keep `RIDEIT_TOKEN_SECRET` set
+in Render as well, then save and redeploy.
+
+After deploying, open `/api/health`. A healthy database returns HTTP 200 with
+`success: true`. HTTP 500 means the connection still needs attention; inspect
+the Render runtime logs for `Database health check failed` and its traceback.
+
 Run locally from the repository root with `python backend/app.py`. The API
 listens on port 5000. For the mobile app, set `EXPO_PUBLIC_API_URL` in the root
 `.env` to the backend URL. A physical phone needs the computer's LAN address,

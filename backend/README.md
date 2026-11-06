@@ -17,6 +17,25 @@ listens on port 5000. For the mobile app, set `EXPO_PUBLIC_API_URL` in the root
 `.env` to the backend URL. A physical phone needs the computer's LAN address,
 not `localhost`. Without an override, the app uses the existing Render URL.
 
+For example, if Postman logs in at `http://127.0.0.1:5000/api/login` and Expo
+opens at `exp://192.168.100.130:8081`, create `D:\RideIT\.env` with:
+
+```dotenv
+EXPO_PUBLIC_API_URL=http://192.168.100.130:5000
+```
+
+Use your computer's current Wi-Fi IP if it changes. Port 8081 serves the Expo
+app; port 5000 serves the Flask API. Do not add `/api/login` to this base URL.
+The root `.env.example` is only a template; Expo does not load it. The separate
+`backend/.env` configures MySQL and token signing, not the mobile API URL.
+
+Keep the backend running and the phone on the same Wi-Fi as the computer.
+Restart Expo with `npx expo start --clear`, then reopen or fully reload the app
+on the phone. Its login now reaches the same local server as Postman. To check
+phone connectivity, open `http://192.168.100.130:5000/api/health` in the phone's
+browser. It should report `success: true`. If the phone cannot reach it, check
+that Windows Firewall allows the local Python server on your private network.
+
 On Render, retain the existing start command (`gunicorn app:app` when its root
 directory is `backend`). Redeploy the backend before using the new mobile login.
 The new login response must include `access_token` and `expires_in`.

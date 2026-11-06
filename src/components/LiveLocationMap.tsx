@@ -43,6 +43,8 @@ export default function LiveLocationMap({
     require("../../assets/sounds/arrival-beep.wav"),
   );
   const mounted = useRef(true);
+  const requestingLocation = useRef(false);
+  const alertSession = useRef({ active: false });
   const notifiedTrips = useRef(new Set<string>());
   const fixTime = useRef(0);
   const [appActive, setAppActive] = useState(
@@ -59,7 +61,8 @@ export default function LiveLocationMap({
   const [overview, setOverview] = useState(0);
   const [direction, setDirection] = useState<RouteDirection>("northbound");
   const [directionOpen, setDirectionOpen] = useState(false);
-  const tripKey = `${tripId}:${direction}:${destinationName || ""}`;
+  const tripKey = `${tripId}:${stationKey(destinationName || "")}`;
+  const tracking = enabled && focused && appActive;
   const destination = destinationName
     ? (carouselRoutes[direction].stations.find(
         (station) => stationKey(station.name) === stationKey(destinationName),
@@ -78,19 +81,144 @@ export default function LiveLocationMap({
   }, []);
 
   useEffect(() => {
+    const session = { active: tracking };
+    alertSession.current = session;
+    return () => {
+      // Cancel any pending beep or dialog when this trip is no longer visible.
+      session.active = false;
+    };
+  }, [tracking, tripKey, direction]);
+
+  const enableLocation = async () => {
+    if (requestingLocation.current) return;
+    requestingLocation.current = true;
+    setRequesting(true);
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!mounted.current) return;
+      setSettingsNeeded(!permission.granted && !permission.canAskAgain);
+      if (!permission.granted) {
+        setMessage(
+          "Location permission was denied. Allow location access to show your position.",
+        );
+        return;
+      }
+      setEnabled(true);
+      // Denial keeps in-app alerts available.
+      void enableArrivalNotifications().catch(() => false);
+    } catch {
+      if (mounted.current)
+        setMessage(
+          "Could not request location. Check your device settings and try again.",
+        );
+    } finally {
+      requestingLocation.current = false;
+      if (mounted.current) setRequesting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!tracking) return;
+    let cancelled = false;
+    let subscription: Location.LocationSubscription | undefined;
+    const fail = (text: string) => {
+      if (cancelled) return;
+      setMessage(text);
+      setPosition(null);
+      setEnabled(false);
+    };
+    const start = async () => {
+      // A resumed screen must receive a fresh fix before it can alert again.
+      fixTime.current = 0;
+      setPosition(null);
+      setMessage("Finding your location… This may take a moment outdoors.");
+      try {
+        if (!(await Location.hasServicesEnabledAsync())) {
+          fail("Device location is turned off. Turn it on and try again.");
+          return;
+        }
+        if (cancelled) return;
+        const permission = await Location.getForegroundPermissionsAsync();
+        if (cancelled) return;
+        if (!permission.granted) {
+          setSettingsNeeded(!permission.canAskAgain);
+          fail("Location access is disabled. Allow access to resume tracking.");
+          return;
+        }
+        setSettingsNeeded(false);
+        subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            distanceInterval: 5,
+            timeInterval: 2000,
+          },
+          (location) => {
+            if (cancelled) return;
+            if (
+              !Number.isFinite(location.timestamp) ||
+              !Number.isFinite(location.coords.latitude) ||
+              !Number.isFinite(location.coords.longitude) ||
+              Math.abs(location.coords.latitude) > 90 ||
+              Math.abs(location.coords.longitude) > 180
+            )
+              return;
+            fixTime.current = location.timestamp;
+            const accuracy = location.coords.accuracy;
+            const validAccuracy =
+              accuracy != null && Number.isFinite(accuracy) && accuracy >= 0
+                ? accuracy
+                : null;
+            setPosition({
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+              accuracy: validAccuracy,
+            });
+            setMessage(
+              validAccuracy == null
+                ? "Live location · accuracy unavailable"
+                : `Live location · accuracy about ${Math.round(validAccuracy)} m`,
+            );
+          },
+          () =>
+            fail(
+              "Location updates stopped. Check GPS and permissions, then try again.",
+            ),
+        );
+        // The screen can close while the native subscription is being created.
+        if (cancelled) subscription.remove();
+      } catch {
+        fail(
+          "Could not access GPS. Check device location settings and try again.",
+        );
+      }
+    };
+    void start();
+    return () => {
+      cancelled = true;
+      fixTime.current = 0;
+      subscription?.remove();
+    };
+  }, [tracking]);
+
+  useEffect(() => {
     const key = tripKey;
+    const session = alertSession.current;
+    const canAlert = () =>
+      mounted.current && session.active && AppState.currentState === "active";
     if (
-      !enabled ||
-      !focused ||
-      !appActive ||
+      !tracking ||
+      !canAlert() ||
       !destination ||
       !position ||
       notifiedTrips.current.has(key)
     )
       return;
     // Ignore stale or imprecise fixes so GPS drift does not trigger an arrival.
+    const fixAge = Date.now() - fixTime.current;
     if (
-      Date.now() - fixTime.current > 15000 ||
+      !Number.isFinite(fixAge) ||
+      fixAge < 0 ||
+      fixAge > 15000 ||
       position.accuracy == null ||
       position.accuracy > 100
     )
@@ -115,11 +243,11 @@ export default function LiveLocationMap({
           playsInSilentMode: true,
           shouldPlayInBackground: false,
         });
-        if (!mounted.current || AppState.currentState !== "active") return;
+        if (!canAlert()) return;
         await arrivalBeep.seekTo(0);
-        arrivalBeep.play();
+        if (canAlert()) arrivalBeep.play();
       } catch {
-        if (mounted.current)
+        if (canAlert())
           setMessage(
             "Arrival alert sent. Beep could not play; check your media volume and audio output.",
           );
@@ -129,116 +257,20 @@ export default function LiveLocationMap({
     void showArrivalNotification(destination.name)
       .catch(() => false)
       .then((shown) => {
-        if (!shown && mounted.current && AppState.currentState === "active") {
+        if (!shown && canAlert()) {
           Alert.alert(
             `Arriving at ${destination.name}`,
             `You are arriving at ${destination.name}. \nPrepare to get off at your destination.`,
           );
         }
       });
-  }, [
-    position,
-    destination,
-    tripKey,
-    enabled,
-    focused,
-    appActive,
-    onArrival,
-    arrivalBeep,
-  ]);
-
-  const enableLocation = async () => {
-    setRequesting(true);
-    try {
-      const permission = await Location.requestForegroundPermissionsAsync();
-      if (!mounted.current) return;
-      setSettingsNeeded(!permission.granted && !permission.canAskAgain);
-      if (!permission.granted) {
-        setMessage(
-          "Location permission was denied. Allow location access to show your position.",
-        );
-        return;
-      }
-      setEnabled(true);
-      // Denial keeps in-app alerts available.
-      void enableArrivalNotifications().catch(() => false);
-    } catch {
-      if (mounted.current)
-        setMessage(
-          "Could not request location. Check your device settings and try again.",
-        );
-    } finally {
-      if (mounted.current) setRequesting(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!enabled || !focused || !appActive) return;
-    let cancelled = false;
-    let subscription: Location.LocationSubscription | undefined;
-    const fail = (text: string) => {
-      if (cancelled) return;
-      setMessage(text);
-      setPosition(null);
-      setEnabled(false);
-    };
-    const start = async () => {
-      setPosition(null);
-      setMessage("Finding your location… This may take a moment outdoors.");
-      try {
-        if (!(await Location.hasServicesEnabledAsync())) {
-          fail("Device location is turned off. Turn it on and try again.");
-          return;
-        }
-        if (cancelled) return;
-        const permission = await Location.getForegroundPermissionsAsync();
-        if (cancelled) return;
-        if (!permission.granted) {
-          setSettingsNeeded(!permission.canAskAgain);
-          fail("Location access is disabled. Allow access to resume tracking.");
-          return;
-        }
-        subscription = await Location.watchPositionAsync(
-          {
-            accuracy: Location.Accuracy.High,
-            distanceInterval: 5,
-            timeInterval: 2000,
-          },
-          (location) => {
-            if (cancelled) return;
-            fixTime.current = location.timestamp;
-            setPosition(location.coords);
-            setMessage(
-              location.coords.accuracy == null
-                ? "Live location · accuracy unavailable"
-                : `Live location · accuracy about ${Math.round(location.coords.accuracy)} m`,
-            );
-          },
-          () =>
-            fail(
-              "Location updates stopped. Check GPS and permissions, then try again.",
-            ),
-        );
-        // The screen can close while the native subscription is being created.
-        if (cancelled) subscription.remove();
-      } catch {
-        fail(
-          "Could not access GPS. Check device location settings and try again.",
-        );
-      }
-    };
-    void start();
-    return () => {
-      cancelled = true;
-      subscription?.remove();
-    };
-  }, [enabled, focused, appActive]);
+  }, [position, destination, tripKey, tracking, onArrival, arrivalBeep]);
 
   return (
     <View style={styles.card}>
       <View style={styles.map}>
         <LeafletMap
-          position={enabled && focused && appActive ? position : null}
+          position={tracking ? position : null}
           recenter={recenter}
           direction={direction}
           overview={overview}
@@ -267,8 +299,9 @@ export default function LiveLocationMap({
         <View style={styles.buttons}>
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityState={{ disabled: requesting, busy: requesting }}
             disabled={requesting}
-            style={styles.button}
+            style={[styles.button, requesting && styles.disabledButton]}
             onPress={() => {
               if (enabled) {
                 setEnabled(false);
@@ -304,10 +337,11 @@ export default function LiveLocationMap({
         <View style={styles.buttons}>
           <TouchableOpacity
             accessibilityRole="button"
-            disabled={!enabled || !position}
+            accessibilityState={{ disabled: !tracking || !position }}
+            disabled={!tracking || !position}
             style={[
               styles.button,
-              (!enabled || !position) && styles.disabledButton,
+              (!tracking || !position) && styles.disabledButton,
             ]}
             onPress={() => setRecenter((value) => value + 1)}
           >
@@ -349,7 +383,12 @@ export default function LiveLocationMap({
                   setDirectionOpen(false);
                 }}
               >
-                <Text style={styles.buttonText}>
+                <Text
+                  style={[
+                    styles.buttonText,
+                    direction === value && styles.selectedDirectionText,
+                  ]}
+                >
                   {value === "northbound"
                     ? "Northbound: PITX to Monumento"
                     : "Southbound: Monumento to PITX"}
@@ -375,6 +414,7 @@ const styles = StyleSheet.create({
   buttons: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   directionMenu: { gap: 6 },
   selectedDirection: { backgroundColor: "#2f2f30" },
+  selectedDirectionText: { color: "#FFFFFF" },
   disabledButton: { opacity: 0.5 },
   button: {
     backgroundColor: "#ccc9ce",
@@ -383,6 +423,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: "center",
   },
-  buttonText: { color: "#FFFFFF", fontWeight: "700", fontSize: 13 },
+  buttonText: { color: "#241b38", fontWeight: "700", fontSize: 13 },
   hint: { color: "#ffffff", fontSize: 11, lineHeight: 16 },
 });
